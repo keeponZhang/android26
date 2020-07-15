@@ -1322,6 +1322,12 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
         return resolveActivity(intent, rInfo, startFlags, profilerInfo);
     }
 
+//    这里的app.thread 指的是IApplicationThread ,它的实现是ActivityThread 的内部类
+//    Application Thread ，其中ApplicationThread 继承了IApplicationThread.Stub。app 指的是传入
+//    的要启动的Activity 所在的应用程序进程，因此，这段代码指的就是要在目标应用程序进
+//    程启动Activity 。当前代码逻辑运行在AMS 所在的进程（ SystemServer 进程）中，通过
+//    Application Thread 来与应用程序进程进行Binder 通信，换句话说， ApplicationThread 是AMS
+//    所在进程（ SystemServer 进程）和应用程序进程的通信桥梁，如图4-3 所示。（1474）
     final boolean realStartActivityLocked(ActivityRecord r, ProcessRecord app,
             boolean andResume, boolean checkConfig) throws RemoteException {
 
@@ -1464,6 +1470,7 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
                     mService.getGlobalConfiguration(), r.getMergedOverrideConfiguration());
             r.setLastReportedConfiguration(mergedConfiguration);
 
+            //这里开始进行进程间通信
             app.thread.scheduleLaunchActivity(new Intent(r.intent), r.appToken,
                     System.identityHashCode(r), r.info,
                     // TODO: Have this take the merged configuration instead of separate global and
@@ -1472,7 +1479,7 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
                     mergedConfiguration.getOverrideConfiguration(), r.compat,
                     r.launchedFromPackage, task.voiceInteractor, app.repProcState, r.icicle,
                     r.persistentState, results, newIntents, !andResume,
-                    mService.isNextTransitionForward(), profilerInfo);
+                    mService.isNextTransitionForward(), profilerInfo);//1
 
             if ((app.info.privateFlags&ApplicationInfo.PRIVATE_FLAG_CANT_SAVE_STATE) != 0) {
                 // This may be a heavy-weight process!  Note that the package
@@ -1548,16 +1555,19 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
 
         return true;
     }
-
+//    在注释l 处获取即将启动的Activity 所在的应用程序进程，在注释2 处判断要启动的
+//    Activity 所在的应用程序进程如果已经运行的话，就会调用注释3 处的reayStartActivityLocked
+//    方战，这个方法的第二个参数是代表要启动的Activity 所在的应用程序进程的ProcessRecord
     void startSpecificActivityLocked(ActivityRecord r,
             boolean andResume, boolean checkConfig) {
         // Is this activity's application already running?
+        //获取即将启动的Act 工V工ty 的所在的应用程序进程
         ProcessRecord app = mService.getProcessRecordLocked(r.processName,
-                r.info.applicationInfo.uid, true);
+                r.info.applicationInfo.uid, true);//1
 
         r.getStack().setLaunchTime(r);
 
-        if (app != null && app.thread != null) {
+        if (app != null && app.thread != null) {//2
             try {
                 if ((r.info.flags&ActivityInfo.FLAG_MULTIPROCESS) == 0
                         || !"android".equals(r.info.packageName)) {
@@ -1566,7 +1576,7 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
                     // part of the framework so doesn't make sense to track as a
                     // separate apk in the process.
                     app.addPackage(r.info.packageName, r.info.applicationInfo.versionCode,
-                            mService.mProcessStats);
+                            mService.mProcessStats);//3
                 }
                 realStartActivityLocked(r, app, andResume, checkConfig);
                 return;
@@ -2055,17 +2065,23 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
     boolean resumeFocusedStackTopActivityLocked() {
         return resumeFocusedStackTopActivityLocked(null, null, null);
     }
-
+//    在注释1 处调用ActivityStack 的topRunningActivityLocked 方总获取要启动的Activity
+//    所在校的枝顶的不是处于停止状态的ActivityRecord。在注释2 处，如果ActivityRecord 不
+//    为null ，或者要启动的Activity 的状态不是RESUMED 状态，就会i周用注释3 处的
+//    ActivityStack 的resumeTopActivityUncheckedLocked 方毡，对于即将启动的Activity ，注释2
+//    处的条件判断是肯定满足的，我们来查看ActivityStack 的resumeTopActivityUncheckedLocked
+//    方法，
     boolean resumeFocusedStackTopActivityLocked(
             ActivityStack targetStack, ActivityRecord target, ActivityOptions targetOptions) {
         if (targetStack != null && isFocusedStack(targetStack)) {
-//            在注释1 处调用ActivityStack 的resumeTopActivityUncheckedLocked 方f去， ActivityStack
+//            在注释1 处调用ActivityStack 的resumeTopActivityUncheckedLocked 方法， ActivityStack
 //            对象是用来描述Activity 堆栈的，
             return targetStack.resumeTopActivityUncheckedLocked(target, targetOptions);
         }
-        final ActivityRecord r = mFocusedStack.topRunningActivityLocked();
-        if (r == null || r.state != RESUMED) {
-            mFocusedStack.resumeTopActivityUncheckedLocked(null, null);
+        //获取要启动的Activity 所在校的核顶的不是处于停止状态的ActivityRecord
+        final ActivityRecord r = mFocusedStack.topRunningActivityLocked();//1
+        if (r == null || r.state != RESUMED) {//2
+            mFocusedStack.resumeTopActivityUncheckedLocked(null, null);//3
         } else if (r.state == RESUMED) {
             // Kick off any lingering app transitions form the MoveTaskToFront operation.
             mFocusedStack.executeAppTransition(targetOptions);

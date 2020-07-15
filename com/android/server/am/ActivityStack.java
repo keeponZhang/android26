@@ -2212,8 +2212,8 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
         try {
             // Protect against recursion.
             mStackSupervisor.inResumeTopActivity = true;
-//            在注释l 处i周用了resumeTopActivitylnnerLocked 方法，如下所示
-            result = resumeTopActivityInnerLocked(prev, options);
+//            在注释l 处调用了resumeTopActivitylnnerLocked 方法，如下所示
+            result = resumeTopActivityInnerLocked(prev, options);//1
         } finally {
             mStackSupervisor.inResumeTopActivity = false;
         }
@@ -2237,8 +2237,10 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
         task.touchActiveTime();
         mRecentTasks.addLocked(task);
     }
-//    resumeTopActivitylnnerLocked 方陆的代码很长， 在此仅截取我们要分析的关键的部分，
+//   启动launcher时: resumeTopActivitylnnerLocked 方陆的代码很长， 在此仅截取我们要分析的关键的部分，
 //    调用ActivityStackSupervisor 的resumeHomeStackTask 方法（2308)，代码如下所示：
+    //启动普通activity时，resumeTopActivity Inner Locked 方法代码非常多，我们只需要关注调用了
+//ActivityStackSupervisor 的startSpecificActivityLocked 方法即可（最后一行，注释2）
     private boolean resumeTopActivityInnerLocked(ActivityRecord prev, ActivityOptions options) {
         if (!mService.mBooting && !mService.mBooted) {
             // Not ready yet!
@@ -2662,7 +2664,7 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
                 if (DEBUG_SWITCH) Slog.v(TAG_SWITCH, "Restarting: " + next);
             }
             if (DEBUG_STATES) Slog.d(TAG_STATES, "resumeTopActivityLocked: Restarting " + next);
-            mStackSupervisor.startSpecificActivityLocked(next, true, true);
+            mStackSupervisor.startSpecificActivityLocked(next, true, true);//2
         }
 
         if (DEBUG_STACK) mStackSupervisor.validateTopActivitiesLocked();

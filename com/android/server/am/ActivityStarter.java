@@ -253,7 +253,7 @@ class ActivityStarter {
         mUsingVr2dDisplay = false;
     }
 //    在注释l 处判断启动的理由不为空，如果为空则抛出IllegalArgumentException 异常。
-//    紧接着又调用了sta口Activity 方法(287)
+//    紧接着又调用了startActivity 方法(287)
     int startActivityLocked(IApplicationThread caller, Intent intent, Intent ephemeralIntent,
             String resolvedType, ActivityInfo aInfo, ResolveInfo rInfo,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
@@ -576,7 +576,7 @@ class ActivityStarter {
 
         doPendingActivityLaunchesLocked(false);
 
-        //注意参数
+        //注意参数outActivity
         return startActivity(r, sourceRecord, voiceSession, voiceInteractor, startFlags, true,
                 options, inTask, outActivity);//4
     }
@@ -681,7 +681,7 @@ class ActivityStarter {
     }
 //    ActivityStarter 是Android 7.0 中新加入的类，它是加载Activity 的控制类， 会收集所有
 //    的逻辅来决定如何将Intent 和Flags 转换为Activity ，并将Activity 和Task 以及Stack 相关
-//    联。ActivityStarter 的startActivityMayWait 方法i周用了startActivityLocked 方法
+//    联。ActivityStarter 的startActivityMayWait 方法调用了startActivityLocked 方法
     final int startActivityMayWait(IApplicationThread caller, int callingUid,
             String callingPackage, Intent intent, String resolvedType,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
@@ -1009,7 +1009,7 @@ class ActivityStarter {
             mPowerHintSent = false;
         }
     }
-
+//    startActivity 方怯紧接着调用了startActivityUnchecked 方怯：
     private int startActivity(final ActivityRecord r, ActivityRecord sourceRecord,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
             int startFlags, boolean doResume, ActivityOptions options, TaskRecord inTask,
@@ -1037,6 +1037,14 @@ class ActivityStarter {
     }
 
     // Note: This method should only be called from {@link startActivity}.
+    //
+//    startActivityUnchecked 方战主要处理与枝管理相关的逻辑。在标注①处(Launcher.startSafety)我们得知，
+//    启动根Activity 时会将Intent 的Flag 设置为FLAG ACTIVITY NEW TASK ，这样注释l(看1202mStartActivity.resultTo = null)
+//    处的条件判断就会楠a足， 接着执行注释2 处的setTaskFromReuseOrCreateNewTask 方怯，
+//    其内部会创建一个新的TaskRecord ，用来描述一个Activity 任务枝，也就是说
+//    setTaskFromReuseOrCreateNewTask 方怯内部会创建一个新的Activ句任务挠。Activity 任
+//    务钱其实是一个假想的模型，并不真实存在，关于Activity 任务枝会在第6 章进行介绍。
+//    在注释3 处会调用ActivityStackSupervisor 的resumeFocusedStackTopActivityLocked 方法
     private int startActivityUnchecked(final ActivityRecord r, ActivityRecord sourceRecord,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
             int startFlags, boolean doResume, ActivityOptions options, TaskRecord inTask,
@@ -1200,10 +1208,11 @@ class ActivityStarter {
         // Should this be considered a new task?
         int result = START_SUCCESS;
         if (mStartActivity.resultTo == null && mInTask == null && !mAddingToTask
-                && (mLaunchFlags & FLAG_ACTIVITY_NEW_TASK) != 0) {
+                && (mLaunchFlags & FLAG_ACTIVITY_NEW_TASK) != 0) {//1
             newTask = true;
+            //创建新的TaskRecord
             result = setTaskFromReuseOrCreateNewTask(
-                    taskToAffiliate, preferredLaunchStackId, topStack);
+                    taskToAffiliate, preferredLaunchStackId, topStack);//2
         } else if (mSourceRecord != null) {
             result = setTaskFromSourceRecord();
         } else if (mInTask != null) {
@@ -1263,7 +1272,7 @@ class ActivityStarter {
                     mTargetStack.moveToFront("startActivityUnchecked");
                 }
                 mSupervisor.resumeFocusedStackTopActivityLocked(mTargetStack, mStartActivity,
-                        mOptions);
+                        mOptions);//3
             }
         } else {
             mTargetStack.addRecentActivityLocked(mStartActivity);

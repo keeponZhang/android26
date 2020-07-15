@@ -1483,6 +1483,8 @@ class ContextImpl extends Context {
         return startServiceCommon(service, true, user);
     }
 
+//    在注释l 处调用AMS 的代理IActivity Manager 的startService 方法，最终调用的是AMS
+//    的startService 方法
     private ComponentName startServiceCommon(Intent service, boolean requireForeground,
             UserHandle user) {
         try {

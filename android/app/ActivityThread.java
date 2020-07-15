@@ -747,6 +747,12 @@ public final class ActivityThread {
 
         // we use token to identify this activity without having to send the
         // activity itself back to the activity manager. (matters more with ipc)
+//        scheduleLaunchActivity 方法将启动Activity 的参数封装成ActivityClientRecord,
+//        sendMessage 方怯向H 类发送类型为LAUNCH一ACTIVITY 的消息，并将Activ町ClientRecord
+//        传递过去， sendMessage 方陆有多个重载方告，最终调用的sendMessage 方法如下所示：
+//        这里mH 指的是H ，它是ActivityThread 的内部类并继承自Handler ，是应用程序进程
+//        中主线程的消息管理类。因为Applicatio日bread 是一个Binder ，它的调用逻辑运行在Binder
+//        线程池中，所以这里需要用H 将代码的逻辑切换到主线程中
         @Override
         public final void scheduleLaunchActivity(Intent intent, IBinder token, int ident,
                 ActivityInfo info, Configuration curConfig, Configuration overrideConfig,
@@ -1581,16 +1587,21 @@ public final class ActivityThread {
             }
             return Integer.toString(code);
         }
+//        查看H 的handleMessage 方怯中对LAUNCH_ACTIVITY 的处理，在注释l 处将传过
+//        来的msg 的成员变量obj 转换为ActivityClientRecord 。在注释2 处通过
+//        getPackagelnfoNoCheck 方法获得LoadedApk 类型的对象并赋值给ActivityC!ientRecord 的
+//        成员变量packagelnfo 。应用程序进程要启动Activity 时需要将该Activity 所属的APK 加载进
+//        来，而LoadedApk 就是用来描述己加载的APK 文件的.
         public void handleMessage(Message msg) {
             if (DEBUG_MESSAGES) Slog.v(TAG, ">>> handling: " + codeToString(msg.what));
             switch (msg.what) {
                 case LAUNCH_ACTIVITY: {
                     Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "activityStart");
-                    final ActivityClientRecord r = (ActivityClientRecord) msg.obj;
+                    final ActivityClientRecord r = (ActivityClientRecord) msg.obj;//1
 
                     r.packageInfo = getPackageInfoNoCheck(
-                            r.activityInfo.applicationInfo, r.compatInfo);
-                    handleLaunchActivity(r, null, "LAUNCH_ACTIVITY");
+                            r.activityInfo.applicationInfo, r.compatInfo);//2
+                    handleLaunchActivity(r, null, "LAUNCH_ACTIVITY");//3
                     Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
                 } break;
                 case RELAUNCH_ACTIVITY: {
@@ -2640,7 +2651,9 @@ public final class ActivityThread {
     private void sendMessage(int what, Object obj, int arg1, int arg2) {
         sendMessage(what, obj, arg1, arg2, false);
     }
-
+//    这里mH 指的是H ，它是ActivityThread 的内部类并继承自Handler ，是应用程序进程
+//    中主线程的消息管理类。因为Applicatio日bread 是一个Binder ，它的调用逻辑运行在Binder
+//    线程池中，所以这里需要用H 将代码的逻辑切换到主线程中
     private void sendMessage(int what, Object obj, int arg1, int arg2, boolean async) {
         if (DEBUG_MESSAGES) Slog.v(
             TAG, "SCHEDULE " + what + " " + mH.codeToString(what)
@@ -2680,16 +2693,26 @@ public final class ActivityThread {
         sendMessage(H.CLEAN_UP_CONTEXT, cci);
     }
 
+    //注释l 处用来获取Activity Info ，用于存储代码以及AndroidManifes 设置的Activity 和
+    //Receiver 节点信息，比如Activity 的theme 和launchMode 。在注释2 处获取APK 文件的描－
+    //述类Lo a dedApk 。在注释3 处获取要启动的Activity 的ComponentName 类， 在
+    //ComponentName 类中保存了该Activity 的包名和类名。注释4 处用来创建要启动Activity
+    //的上下文环境。注释5 处根据ComponentName 中存储的Activity 类名， 用类加载器来创建
+    //该Activity 的实例。注释6 处用来创建Application, makeApplication 方法内部会调用
+    //Application 的on Create 方法。注释7 处调用Activity 的attach 方怯初始化Activity ， 在attach
+    //方法中会创建Window 对象（ Phone Window ）并与Activity 自身进行关联。在注释8 处调用
+    //Instrumentation 的callActivityOnCr 巳ate 方陆来启动Activity ，如下所示：
     private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) {
         // System.out.println("##### [" + System.currentTimeMillis() + "] ActivityThread.performLaunchActivity(" + r + ")");
-
-        ActivityInfo aInfo = r.activityInfo;
+      //获取Activityinfo 类
+        ActivityInfo aInfo = r.activityInfo;//1
         if (r.packageInfo == null) {
+            //获取APK 文件的描述类LoadedApk
             r.packageInfo = getPackageInfo(aInfo.applicationInfo, r.compatInfo,
-                    Context.CONTEXT_INCLUDE_CODE);
+                    Context.CONTEXT_INCLUDE_CODE);//2
         }
 
-        ComponentName component = r.intent.getComponent();
+        ComponentName component = r.intent.getComponent();//3
         if (component == null) {
             component = r.intent.resolveActivity(
                 mInitialApplication.getPackageManager());
@@ -2700,13 +2723,14 @@ public final class ActivityThread {
             component = new ComponentName(r.activityInfo.packageName,
                     r.activityInfo.targetActivity);
         }
-
-        ContextImpl appContext = createBaseContextForActivity(r);
+      //创建要启动Activity 的上下文环境
+        ContextImpl appContext = createBaseContextForActivity(r);//4
         Activity activity = null;
         try {
+            //用类加载器来创建该Activity 的实例
             java.lang.ClassLoader cl = appContext.getClassLoader();
             activity = mInstrumentation.newActivity(
-                    cl, component.getClassName(), r.intent);
+                    cl, component.getClassName(), r.intent);//5
             StrictMode.incrementExpectedActivityCount(activity.getClass());
             r.intent.setExtrasClassLoader(cl);
             r.intent.prepareToEnterProcess();
@@ -2722,6 +2746,7 @@ public final class ActivityThread {
         }
 
         try {
+            //创建Application
             Application app = r.packageInfo.makeApplication(false, mInstrumentation);
 
             if (localLOGV) Slog.v(TAG, "Performing launch of " + r);
@@ -2747,6 +2772,7 @@ public final class ActivityThread {
                     r.mPendingRemoveWindowManager = null;
                 }
                 appContext.setOuterContext(activity);
+                //初始化Activity
                 activity.attach(appContext, this, getInstrumentation(), r.token,
                         r.ident, app, r.intent, r.activityInfo, title, r.parent,
                         r.embeddedID, r.lastNonConfigurationInstances, config,
@@ -2765,7 +2791,8 @@ public final class ActivityThread {
 
                 activity.mCalled = false;
                 if (r.isPersistable()) {
-                    mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);
+                    //这里面会调用Activity.onCreate方法
+                    mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);//8
                 } else {
                     mInstrumentation.callActivityOnCreate(activity, r.state);
                 }
@@ -2868,7 +2895,9 @@ public final class ActivityThread {
         }
         return appContext;
     }
-
+//    注释l 处的performLaunchActivity 方陆用来启动Activity,注释2 处的代码用来将
+//    Activity 的状态设置为Resume。如果该Activity 为null 则会通知AMS 停止启动Activity 。
+//    下面来查看performLaunchActivity 方法做了什么：
     private void handleLaunchActivity(ActivityClientRecord r, Intent customIntent, String reason) {
         // If we are getting ready to gc after going to the background, well
         // we are back active so skip it.
@@ -2888,15 +2917,16 @@ public final class ActivityThread {
 
         // Initialize before creating the activity
         WindowManagerGlobal.initialize();
-
-        Activity a = performLaunchActivity(r, customIntent);
+        //启动Activity
+        Activity a = performLaunchActivity(r, customIntent);//1
 
         if (a != null) {
             r.createdConfig = new Configuration(mConfiguration);
             reportSizeConfigurations(r);
             Bundle oldState = r.state;
+            //将Activity 的状态置为Resume
             handleResumeActivity(r.token, false, r.isForward,
-                    !r.activity.mFinished && !r.startsNotResumed, r.lastProcessedSeq, reason);
+                    !r.activity.mFinished && !r.startsNotResumed, r.lastProcessedSeq, reason);//2
 
             if (!r.activity.mFinished && r.startsNotResumed) {
                 // The activity manager actually wants this one to start out paused, because it
@@ -2920,6 +2950,7 @@ public final class ActivityThread {
         } else {
             // If there was an error, for any reason, tell the activity manager to stop us.
             try {
+                //停止Activity 启动
                 ActivityManager.getService()
                     .finishActivity(r.token, Activity.RESULT_CANCELED, null,
                             Activity.DONT_FINISH_TASK_WITH_ACTIVITY);

@@ -323,7 +323,12 @@ public final class ActiveServices {
     ArrayMap<ComponentName, ServiceRecord> getServicesLocked(int callingUser) {
         return getServiceMapLocked(callingUser).mServicesByName;
     }
-
+//    注释1 处的retrieveServiceLocked 方告会查找是否有与参数service 对应的
+//    ServiceRecord ，如果没有找到，就会调用PackageManagerService 去获取参数service 对应的
+//    Service 信息，并封装到ServiceRecord 中，最后将ServiceRecord 封装为ServiceLookupResult
+//    返回。其中ServiceRecord 用于描述一个Service ，和此前讲过的Activity Record 类似。在注
+//    释2 处通过注释l 处返回的ServiceLookupResult 得到参数service 对应的ServiceRecord ，并
+//    传入到注释3 处的startServicelnnerLocked 方法中。
     ComponentName startServiceLocked(IApplicationThread caller, Intent service, String resolvedType,
             int callingPid, int callingUid, boolean fgRequired, String callingPackage, final int userId)
             throws TransactionTooLargeException {
@@ -346,7 +351,7 @@ public final class ActiveServices {
 
         ServiceLookupResult res =
             retrieveServiceLocked(service, resolvedType, callingPackage,
-                    callingPid, callingUid, userId, true, callerFg, false);
+                    callingPid, callingUid, userId, true, callerFg, false);//1
         if (res == null) {
             return null;
         }
@@ -355,7 +360,7 @@ public final class ActiveServices {
                     ? res.permission : "private to package");
         }
 
-        ServiceRecord r = res.record;
+        ServiceRecord r = res.record;//2
 
         if (!mAm.mUserController.exists(r.userId)) {
             Slog.w(TAG, "Trying to start service with non-existent user! " + r.userId);
@@ -475,7 +480,7 @@ public final class ActiveServices {
             }
         }
 
-        ComponentName cmp = startServiceInnerLocked(smap, service, r, callerFg, addToStarting);
+        ComponentName cmp = startServiceInnerLocked(smap, service, r, callerFg, addToStarting);//3
         return cmp;
     }
 
@@ -522,7 +527,7 @@ public final class ActiveServices {
 
         return  true;
     }
-
+//    在startServicelnnerLocked 方法中又调用了bringUpS erviceLocked 方法，
     ComponentName startServiceInnerLocked(ServiceMap smap, Intent service, ServiceRecord r,
             boolean callerFg, boolean addToStarting) throws TransactionTooLargeException {
         ServiceState stracker = r.getTracker();
@@ -533,7 +538,7 @@ public final class ActiveServices {
         synchronized (r.stats.getBatteryStats()) {
             r.stats.startRunningLocked();
         }
-        String error = bringUpServiceLocked(r, service.getFlags(), callerFg, false, false);
+        String error = bringUpServiceLocked(r, service.getFlags(), callerFg, false, false);//1
         if (error != null) {
             return new ComponentName("!!", error);
         }
@@ -2048,7 +2053,16 @@ public final class ActiveServices {
             }
         }
     }
-
+//    在注释l 处得到ServiceRecord 的processName 值并赋给procNarne ， 其中processName
+//    用来描述Service 想要在哪个进程中运行，默认是当前进程， 我们也可以在AndroidManifest
+//    文件中设置android:process 属性来新开启一个进程运行Service 。在注释2处将procName
+//    和Service 的uid 传入到AMS 的getProcessRecordLocked 方怯中，查询是否存在一个与
+//    Service 对应的ProcessRecord 类型的对象app, ProcessRecord 主要用来描述运行的应用程序
+//    进程的信息。在注释5 处判断Service 对应的app 为null 则说明用来运行Service 的应用程
+//    序进程不存在，则调用注释6 处的AMS 的startProcessLocked 方法来创建对应的应用程序
+//    进程，关于创建应用程序进程请查看第3 章的内容， 这里只讨论没有设置android: process
+//    属性，即应用程序进程存在的情况。在注释3 处判断如果用来运行Service 的应用程序进程
+//    存在，贝iJ t周用注释4 处的rea!StartServiceLocked 方怯来启动Service:
     private String bringUpServiceLocked(ServiceRecord r, int intentFlags, boolean execInFg,
             boolean whileRestarting, boolean permissionsReviewRequired)
             throws TransactionTooLargeException {
@@ -2105,18 +2119,21 @@ public final class ActiveServices {
         }
 
         final boolean isolated = (r.serviceInfo.flags&ServiceInfo.FLAG_ISOLATED_PROCESS) != 0;
-        final String procName = r.processName;
+        //获取Service 想要在哪个进程中运行
+        final String procName = r.processName;//1
         String hostingType = "service";
         ProcessRecord app;
 
         if (!isolated) {
-            app = mAm.getProcessRecordLocked(procName, r.appInfo.uid, false);
+            app = mAm.getProcessRecordLocked(procName, r.appInfo.uid, false);//2
             if (DEBUG_MU) Slog.v(TAG_MU, "bringUpServiceLocked: appInfo.uid=" + r.appInfo.uid
                         + " app=" + app);
-            if (app != null && app.thread != null) {
+            //如果运行Service 的应用程序进程存在
+            if (app != null && app.thread != null) {//3
                 try {
                     app.addPackage(r.appInfo.packageName, r.appInfo.versionCode, mAm.mProcessStats);
-                    realStartServiceLocked(r, app, execInFg);
+                    //启动Service
+                    realStartServiceLocked(r, app, execInFg);//4
                     return null;
                 } catch (TransactionTooLargeException e) {
                     throw e;
@@ -2143,9 +2160,10 @@ public final class ActiveServices {
 
         // Not running -- get it started, and enqueue this service record
         // to be executed when the app comes up.
-        if (app == null && !permissionsReviewRequired) {
+        //如果用来运行Serv 工ce 的应用程序进程不存在
+        if (app == null && !permissionsReviewRequired) {//5
             if ((app=mAm.startProcessLocked(procName, r.appInfo, true, intentFlags,
-                    hostingType, r.name, false, isolated, false)) == null) {
+                    hostingType, r.name, false, isolated, false)) == null) {//6
                 String msg = "Unable to launch app "
                         + r.appInfo.packageName + "/"
                         + r.appInfo.uid + " for service "
@@ -2185,7 +2203,9 @@ public final class ActiveServices {
             }
         }
     }
-
+//    在realStartServiceLocked 方能中调用了app.thread 的scheduleCreateService 方法。其中
+//    app.thread 是IApplicationThread 类型的，它的实现是ActivityThread 的内部类
+//    IApplicationThread
     private final void realStartServiceLocked(ServiceRecord r,
             ProcessRecord app, boolean execInFg) throws RemoteException {
         if (app.thread == null) {

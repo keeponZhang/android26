@@ -18152,7 +18152,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             return mServices.getRunningServiceControlPanelLocked(name);
         }
     }
-
+//    注释l 处调用mServices 的startServiceLocked 方毡， mServices 的类型是ActiveServices
     @Override
     public ComponentName startService(IApplicationThread caller, Intent service,
             String resolvedType, boolean requireForeground, String callingPackage, int userId)
@@ -18177,7 +18177,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             try {
                 res = mServices.startServiceLocked(caller, service,
                         resolvedType, callingPid, callingUid,
-                        requireForeground, callingPackage, userId);
+                        requireForeground, callingPackage, userId);//1
             } finally {
                 Binder.restoreCallingIdentity(origId);
             }
