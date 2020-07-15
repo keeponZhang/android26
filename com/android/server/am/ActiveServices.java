@@ -323,12 +323,12 @@ public final class ActiveServices {
     ArrayMap<ComponentName, ServiceRecord> getServicesLocked(int callingUser) {
         return getServiceMapLocked(callingUser).mServicesByName;
     }
-//    注释1 处的retrieveServiceLocked 方告会查找是否有与参数service 对应的
-//    ServiceRecord ，如果没有找到，就会调用PackageManagerService 去获取参数service 对应的
-//    Service 信息，并封装到ServiceRecord 中，最后将ServiceRecord 封装为ServiceLookupResult
-//    返回。其中ServiceRecord 用于描述一个Service ，和此前讲过的Activity Record 类似。在注
-//    释2 处通过注释l 处返回的ServiceLookupResult 得到参数service 对应的ServiceRecord ，并
-//    传入到注释3 处的startServicelnnerLocked 方法中。
+//    注释1处的retrieveServiceLocked 方法会查找是否有与参数service 对应的
+//    ServiceRecord，如果没有找到，就会调用PackageManagerService去获取参数service对应的
+//    Service信息，并封装到ServiceRecord中，最后将ServiceRecord 封装为ServiceLookupResult
+//    返回。其中ServiceRecord 用于描述一个Service，和此前讲过的ActivityRecord类似。在注
+//    释2处通过注释l处返回的ServiceLookupResult得到参数service 对应的ServiceRecord，并
+//    传入到注释3处的startServicelnnerLocked方法中。
     ComponentName startServiceLocked(IApplicationThread caller, Intent service, String resolvedType,
             int callingPid, int callingUid, boolean fgRequired, String callingPackage, final int userId)
             throws TransactionTooLargeException {
@@ -1229,7 +1229,34 @@ public final class ActiveServices {
         }
         return false;
     }
-
+//    讲到这里， 有必要先介绍几个与Service 相关的对象类型，这样有助于对源码进行理解，
+//     如下所示。
+//      ServiceRecord ：用于描述一个Service。
+//      ProcessRecord ： 一个进程的信息。
+//      ConnectionRecord ：用于描述应用程序进程和Service 建立的一次通信。
+//      AppBindRecord ：应用程序进程通过Intent 绑定Service时，会通过AppBindRecord
+//                   来维护Service 与应用程序进程之间的关联。其内部存储了谁绑定的Service
+//                    ( ProcessRecord ) 、被绑定的Service ( ServiceRecord ）、绑定Service 的Intent
+//                    ( IntentBindRecord ）和所有绑定通信记录的信息（ ArraySet<Connecti onRecord＞ ）。
+//      IntentBindRecord ：用于描述绑定Service 的Intent 。（多个进程有可能绑定一个服务）
+//    在注释l 处调用了ServiceRecord的retrieveAppBindingLocked 方法来获得
+//    AppBindRecord , retrieveAppBindingLocked 方法内部创建IntentBindRecord ，并对
+//    IntentBindRecord 的成员变量进行赋值，后面我们会详细介绍这个关键的方法。
+//     在注释2 处调用bringUpServiceLocked 方法，在bringUpServiceLocked 方怯中又调用
+//    realStartServiceLocked方法，最终由ActivityThread来调用Service 的onCreate方法启动
+//    Service，这也说明了bindService 方法内部会启动Service ，启动Service这一过程在4.2.2 节
+//    中已经讲过，这里不再赘述。在注释3处s.app != null 表示Service 已经运行，其中s 是
+//    ServiceRecord 类型对象，app是ProcessRecord 类型对象。b.intent.received表示当前应用程
+//    序进程已经接收到绑定Service时返回的Binder ，这样应用程序进程就可以通过Binder 来
+//    获取要绑定的Service的访问接口。在注释4处调用c.conn的connected方法，其中c.conn
+//    指的是IServiceConnection，它的具体实现为ServiceDispatcher.InnerConnection ，其中
+//    ServiceDispatcher 是Loaded.Apk 的内部类， InnerConnection 的connected 方法内部会调用H
+//    的post方法向主线程发送消息，并且解决当前应用程序进程和Service 跨进程通信的问题，
+//    在后面会详细介绍这一过程。在注释5 处如果当前应用程序进程是第一个与Service 进行绑
+//    定的，并且Service 已经调用过onUnBind 方法，则需要调用注释6 处的代码。在注释7 处
+//    如果应用程序进程的Client 端没有发送过绑定Service的请求，则会调用注释8 处的代码，
+//    注释8处和注释6处的代码区别就是最后一个参数rebind为false，表示不是重新绑定。接
+//    着我们查看注释6处的requestServiceBindingLocked方法，
     int bindServiceLocked(IApplicationThread caller, IBinder token, Intent service,
             String resolvedType, final IServiceConnection connection, int flags,
             String callingPackage, final int userId) throws TransactionTooLargeException {
@@ -1290,7 +1317,7 @@ public final class ActiveServices {
 
         ServiceLookupResult res =
             retrieveServiceLocked(service, resolvedType, callingPackage, Binder.getCallingPid(),
-                    Binder.getCallingUid(), userId, true, callerFg, isBindExternal);
+                    Binder.getCallingUid(), userId, true, callerFg, isBindExternal);//1
         if (res == null) {
             return 0;
         }
@@ -1403,7 +1430,9 @@ public final class ActiveServices {
             mAm.grantEphemeralAccessLocked(callerApp.userId, service,
                     s.appInfo.uid, UserHandle.getAppId(callerApp.uid));
 
-            AppBindRecord b = s.retrieveAppBindingLocked(service, callerApp);
+            //调用的ServiceRecord的retrieveAppBindingLocked方法，传入intent，ProcessRecord
+            AppBindRecord b = s.retrieveAppBindingLocked(service, callerApp);//1
+//            用于描述应用程序进程和Service 建立的一次通信。
             ConnectionRecord c = new ConnectionRecord(b, activity,
                     connection, flags, clientLabel, clientIntent);
 
@@ -1414,7 +1443,7 @@ public final class ActiveServices {
                 s.connections.put(binder, clist);
             }
             clist.add(c);
-            b.connections.add(c);
+            b.connections.add(c);//1.2
             if (activity != null) {
                 if (activity.connections == null) {
                     activity.connections = new HashSet<ConnectionRecord>();
@@ -1440,8 +1469,9 @@ public final class ActiveServices {
 
             if ((flags&Context.BIND_AUTO_CREATE) != 0) {
                 s.lastActivity = SystemClock.uptimeMillis();
+                //启动服务
                 if (bringUpServiceLocked(s, service.getFlags(), callerFg, false,
-                        permissionsReviewRequired) != null) {
+                        permissionsReviewRequired) != null) {//2
                     return 0;
                 }
             }
@@ -1464,11 +1494,11 @@ public final class ActiveServices {
                     + " apps=" + b.intent.apps.size()
                     + " doRebind=" + b.intent.doRebind);
 
-            if (s.app != null && b.intent.received) {
+            if (s.app != null && b.intent.received) {//3
                 // Service is already running, so we can immediately
                 // publish the connection.
                 try {
-                    c.conn.connected(s.name, b.intent.binder, false);
+                    c.conn.connected(s.name, b.intent.binder, false);//4
                 } catch (Exception e) {
                     Slog.w(TAG, "Failure sending service " + s.shortName
                             + " to connection " + c.conn.asBinder()
@@ -1478,11 +1508,12 @@ public final class ActiveServices {
                 // If this is the first app connected back to this binding,
                 // and the service had previously asked to be told when
                 // rebound, then do so.
-                if (b.intent.apps.size() == 1 && b.intent.doRebind) {
-                    requestServiceBindingLocked(s, b.intent, callerFg, true);
+                if (b.intent.apps.size() == 1 && b.intent.doRebind) {//5
+                    //这里跟8调用requestServiceBindingLocked差最后一个参数
+                    requestServiceBindingLocked(s, b.intent, callerFg, true);//6
                 }
-            } else if (!b.intent.requested) {
-                requestServiceBindingLocked(s, b.intent, callerFg, false);
+            } else if (!b.intent.requested) {//7
+                requestServiceBindingLocked(s, b.intent, callerFg, false);//8
             }
 
             getServiceMapLocked(s.userId).ensureNotStartingBackgroundLocked(s);
@@ -1841,7 +1872,13 @@ public final class ActiveServices {
         r.executeNesting++;
         r.executingStart = now;
     }
-
+//    注释l处i.requested 表示是否发送过绑定Service的请求，从bindServiceLocked方法的
+//    注释5 处得知是发送过的，因此，！i.requested 为false。从bindServiceLocked 方法的注释5
+//    处得知rebind 值为true ，那么（！i.requested || rebind）的值为true。i.apps.size() > 0 表示什么呢？
+//    其中i 是IntentBindRecord类型的对象，AMS 会为每个绑定Service 的Intent分配一个
+//    IntentBindRecord 类型对象，
+//    我们来查看IntentB indRecord 类，不同的应用程序进程可能使用同一个Intent来绑定
+//    Service，因此在注释l 处会用apps 来存储所有用当前Intent 绑定Service 的应用程序进程。
     private final boolean requestServiceBindingLocked(ServiceRecord r, IntentBindRecord i,
             boolean execInFg, boolean rebind) throws TransactionTooLargeException {
         if (r.app == null || r.app.thread == null) {
@@ -1850,10 +1887,14 @@ public final class ActiveServices {
         }
         if (DEBUG_SERVICE) Slog.d(TAG_SERVICE, "requestBind " + i + ": requested=" + i.requested
                 + " rebind=" + rebind);
-        if ((!i.requested || rebind) && i.apps.size() > 0) {
+
+//        下面来验证i.apps.size() > 0是否为true。我们回到bindServiceLocked方法的注释1处，ServiceRecord
+//        的retrieveAppBindingLocked方法
+        if ((!i.requested || rebind) && i.apps.size() > 0) {//1
             try {
                 bumpServiceExecutingLocked(r, execInFg, "bind");
                 r.app.forceProcessStateUpTo(ActivityManager.PROCESS_STATE_SERVICE);
+                //验证成功，会调到IApplicationThread.scheduleBindService方法
                 r.app.thread.scheduleBindService(r, i.intent.getIntent(), rebind,
                         r.app.repProcState);
                 if (!rebind) {
@@ -2053,16 +2094,16 @@ public final class ActiveServices {
             }
         }
     }
-//    在注释l 处得到ServiceRecord 的processName 值并赋给procNarne ， 其中processName
+//    在注释l 处得到ServiceRecord 的processName值并赋给procName， 其中processName
 //    用来描述Service 想要在哪个进程中运行，默认是当前进程， 我们也可以在AndroidManifest
 //    文件中设置android:process 属性来新开启一个进程运行Service 。在注释2处将procName
-//    和Service 的uid 传入到AMS 的getProcessRecordLocked 方怯中，查询是否存在一个与
+//    和Service 的uid 传入到AMS 的getProcessRecordLocked方法中，查询是否存在一个与
 //    Service 对应的ProcessRecord 类型的对象app, ProcessRecord 主要用来描述运行的应用程序
 //    进程的信息。在注释5 处判断Service 对应的app 为null 则说明用来运行Service 的应用程
 //    序进程不存在，则调用注释6 处的AMS 的startProcessLocked 方法来创建对应的应用程序
 //    进程，关于创建应用程序进程请查看第3 章的内容， 这里只讨论没有设置android: process
-//    属性，即应用程序进程存在的情况。在注释3 处判断如果用来运行Service 的应用程序进程
-//    存在，贝iJ t周用注释4 处的rea!StartServiceLocked 方怯来启动Service:
+//    属性，即应用程序进程存在的情况。在注释3处判断如果用来运行Service 的应用程序进程
+//    存在，则调用注释4 处的realStartServiceLocked 方法来启动Service:
     private String bringUpServiceLocked(ServiceRecord r, int intentFlags, boolean execInFg,
             boolean whileRestarting, boolean permissionsReviewRequired)
             throws TransactionTooLargeException {

@@ -23,11 +23,17 @@ import java.io.PrintWriter;
 /**
  * An association between a service and one of its client applications.
  */
+//应用程序进程通过Intent 绑定Service时，会通过AppBindRecord
+//来维护Service与应用程序进程之间的关联。其内部存储了谁绑定的Service
+// ( ProcessRecord)、被绑定的Service(ServiceRecord）、绑定Service的Intent
+// ( IntentBindRecord）和所有绑定通信记录的信息（ ArraySet<ConnectionRecord＞ ）。
 final class AppBindRecord {
     final ServiceRecord service;    // The running service.
+    //IntentBindRecord 这个类会知道有多少个进程绑定了该服务
     final IntentBindRecord intent;  // The intent we are bound to.
     final ProcessRecord client;     // Who has started/bound the service.
 
+    //这个也要注意下
     final ArraySet<ConnectionRecord> connections = new ArraySet<>();
                                     // All ConnectionRecord for this client.
 

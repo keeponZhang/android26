@@ -27,12 +27,20 @@ import java.io.PrintWriter;
 /**
  * A particular Intent that has been bound to a Service.
  */
+//我们来查看IntentBindRecord类，不同的应用程序进程可能使用同一个Intent来绑定
+// Service，因此在注释l处会用apps 来存储所有用当前Intent绑定Service的应用程序进程。
+// i.apps.size()> 0 表示所有用当前Intent 绑定Service 的应用程序进程个数大于0，下面来验
+// 证i.apps.size()> 0 是否为true。我们回到bindServiceLocked 方法的注释1处，ServiceRecord
+// 的retrieveAppBindingLocked方法如下所示：
 final class IntentBindRecord {
     /** The running service. */
+    //被绑定的Service，为什么只有一个，因为这个表示要绑定服务信息的
     final ServiceRecord service;
     /** The intent that is bound.*/
+    //绑定Service 的Intent
     final Intent.FilterComparison intent; // 
     /** All apps that have bound to this Intent. */
+    //所有用当前Intent绑定Service的应用程序进程，（多个进程可能绑定一个服务）
     final ArrayMap<ProcessRecord, AppBindRecord> apps
             = new ArrayMap<ProcessRecord, AppBindRecord>();
     /** Binder published from service. */

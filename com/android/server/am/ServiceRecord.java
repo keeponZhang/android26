@@ -370,17 +370,21 @@ final class ServiceRecord extends Binder {
 
     public AppBindRecord retrieveAppBindingLocked(Intent intent,
             ProcessRecord app) {
+        //只是Intent包装了一下
         Intent.FilterComparison filter = new Intent.FilterComparison(intent);
+        //有可能不同的应用程序进程可能使用同一个Intent 来绑定 Service，所以这里用缓存
         IntentBindRecord i = bindings.get(filter);
         if (i == null) {
-            i = new IntentBindRecord(this, filter);
+            i = new IntentBindRecord(this, filter);//1
             bindings.put(filter, i);
         }
-        AppBindRecord a = i.apps.get(app);
+        AppBindRecord a = i.apps.get(app);//2
         if (a != null) {
             return a;
         }
-        a = new AppBindRecord(this, i, app);
+        //这个是很重点的，传入serviceRecord,IntentBindRecord,ProcessRecord
+        a = new AppBindRecord(this, i, app);//3
+        //往IntentBindRecord的里面赋值
         i.apps.put(app, a);
         return a;
     }

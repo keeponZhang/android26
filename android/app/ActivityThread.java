@@ -1589,8 +1589,8 @@ public final class ActivityThread {
         }
 //        查看H 的handleMessage 方怯中对LAUNCH_ACTIVITY 的处理，在注释l 处将传过
 //        来的msg 的成员变量obj 转换为ActivityClientRecord 。在注释2 处通过
-//        getPackagelnfoNoCheck 方法获得LoadedApk 类型的对象并赋值给ActivityC!ientRecord 的
-//        成员变量packagelnfo 。应用程序进程要启动Activity 时需要将该Activity 所属的APK 加载进
+//        getPackagelnfoNoCheck 方法获得LoadedApk 类型的对象并赋值给ActivityClientRecord 的
+//        成员变量packagelnfo。应用程序进程要启动Activity 时需要将该Activity 所属的APK加载进
 //        来，而LoadedApk 就是用来描述己加载的APK 文件的.
         public void handleMessage(Message msg) {
             if (DEBUG_MESSAGES) Slog.v(TAG, ">>> handling: " + codeToString(msg.what));
@@ -2695,13 +2695,13 @@ public final class ActivityThread {
 
     //注释l 处用来获取Activity Info ，用于存储代码以及AndroidManifes 设置的Activity 和
     //Receiver 节点信息，比如Activity 的theme 和launchMode 。在注释2 处获取APK 文件的描－
-    //述类Lo a dedApk 。在注释3 处获取要启动的Activity 的ComponentName 类， 在
+    //述类LoadedApk 。在注释3 处获取要启动的Activity 的ComponentName 类， 在
     //ComponentName 类中保存了该Activity 的包名和类名。注释4 处用来创建要启动Activity
     //的上下文环境。注释5 处根据ComponentName 中存储的Activity 类名， 用类加载器来创建
     //该Activity 的实例。注释6 处用来创建Application, makeApplication 方法内部会调用
-    //Application 的on Create 方法。注释7 处调用Activity 的attach 方怯初始化Activity ， 在attach
-    //方法中会创建Window 对象（ Phone Window ）并与Activity 自身进行关联。在注释8 处调用
-    //Instrumentation 的callActivityOnCr 巳ate 方陆来启动Activity ，如下所示：
+    //Application 的on Create 方法。注释7 处调用Activity 的attach 方怯初始化Activity，在attach
+    //方法中会创建Window对象（Phone Window ）并与Activity自身进行关联。在注释8处调用
+    //Instrumentation的callActivityOnCreate方法来启动Activity，如下所示：
     private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) {
         // System.out.println("##### [" + System.currentTimeMillis() + "] ActivityThread.performLaunchActivity(" + r + ")");
       //获取Activityinfo 类
@@ -3404,17 +3404,26 @@ public final class ActivityThread {
         }
     }
 
+//    在注释l处获取要启动Service的应用程序的LoadedApk,LoadedApk是一个APK 文
+//    件的描述类。在注释2 处通过i周用LoadedApk 的getClassLoader 方能来获取类加载器。接
+//    着在注释3 处根据CreateServiceData 对象中存储的Service 信息，创建Service 实例。在注
+//    释4 处创建Service 的上下文环境Contextlmpl 对象。在注释5 处通过Service 的attach 方法
+//    来初始化Service。在注释6 处调用Service 的onCreate 方泣，这样Service 就启动了。在注
+//    释7 处将启动的Service加入到ActivityThread 的成员变量mServices中，其中mServices 是
+//    ArrayMap 类型。
     private void handleCreateService(CreateServiceData data) {
         // If we are getting ready to gc after going to the background, well
         // we are back active so skip it.
         unscheduleGcIdler();
-
+//获取要启动Service 的应用程序的LoadedApk
         LoadedApk packageInfo = getPackageInfoNoCheck(
-                data.info.applicationInfo, data.compatInfo);
+                data.info.applicationInfo, data.compatInfo);//1
         Service service = null;
         try {
-            java.lang.ClassLoader cl = packageInfo.getClassLoader();
-            service = (Service) cl.loadClass(data.info.name).newInstance();
+            //获取类加载器
+            java.lang.ClassLoader cl = packageInfo.getClassLoader();//2
+            //创建Service 实例
+            service = (Service) cl.loadClass(data.info.name).newInstance();//3
         } catch (Exception e) {
             if (!mInstrumentation.onException(service, e)) {
                 throw new RuntimeException(
@@ -3425,15 +3434,16 @@ public final class ActivityThread {
 
         try {
             if (localLOGV) Slog.v(TAG, "Creating service " + data.info.name);
-
-            ContextImpl context = ContextImpl.createAppContext(this, packageInfo);
+            //创建Service 的上下文环境Contextimpl 对象
+            ContextImpl context = ContextImpl.createAppContext(this, packageInfo);//4
             context.setOuterContext(service);
 
             Application app = packageInfo.makeApplication(false, mInstrumentation);
+            //初始化Service
             service.attach(context, this, data.info.name, data.token, app,
-                    ActivityManager.getService());
-            service.onCreate();
-            mServices.put(data.token, service);
+                    ActivityManager.getService());//5
+            service.onCreate();//6
+            mServices.put(data.token, service);//7
             try {
                 ActivityManager.getService().serviceDoneExecuting(
                         data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
@@ -6532,11 +6542,11 @@ public final class ActivityThread {
             }
         }
     }
-//    ActivityThread 类用于管理当前应用程序进程的主线程， 在注释l 处创建主线程的消息
-//    循环Looper ，在注释2 处创建ActivityThread 。在注释3 处判断Handler 类型的
-//    sMain ThreadHandler 是否为null ，如果为null 则在注释4 处获取H 类并赋值给
-//    sMain ThreadHandler ，这个H 类继承自Handler ，是ActivityThread 的内部类，用于处理主
-//    线程的消息循环，在第4 章、第5 章我们将会经常提到它。在注释5 处i周用Looper 的loop
+//    ActivityThread类用于管理当前应用程序进程的主线程，在注释l处创建主线程的消息
+//    循环Looper，在注释2处创建ActivityThread 。在注释3处判断Handler 类型的
+//    sMainThreadHandler 是否为null ，如果为null 则在注释4处获取H类并赋值给
+//    sMainThreadHandler，这个H 类继承自Handler ，是ActivityThread 的内部类，用于处理主
+//    线程的消息循环，在第4 章、第5 章我们将会经常提到它。在注释5处调用Looper 的loop
 //    方法，使得Looper 开始处理消息。可以看出，系统在应用程序进程启动完成后，就会创建
 //    一个消息循环，这样运行在应用程序进程中的应用程序可以方便地使用消息处理机制。
     public static void main(String[] args) {
@@ -6563,7 +6573,7 @@ public final class ActivityThread {
 
         ActivityThread thread = new ActivityThread();//2
         thread.attach(false);
-//创建主线程H 类
+//创建主线程H类
         if (sMainThreadHandler == null) {//3
             sMainThreadHandler = thread.getHandler();//4
         }
@@ -6575,7 +6585,7 @@ public final class ActivityThread {
 
         // End of event ActivityThreadMain.
         Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
-        //Looper 开始工作
+        //Looper开始工作
         Looper.loop();//5
 
         throw new RuntimeException("Main thread loop unexpectedly exited");

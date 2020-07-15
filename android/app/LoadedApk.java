@@ -1397,6 +1397,7 @@ public final class LoadedApk {
             Context context, Handler handler, int flags) {
         synchronized (mServices) {
             LoadedApk.ServiceDispatcher sd = null;
+            //这里会缓存起来
             ArrayMap<ServiceConnection, LoadedApk.ServiceDispatcher> map = mServices.get(context);
             if (map != null) {
                 if (DEBUG) Slog.d(TAG, "Returning existing dispatcher " + sd + " for conn " + c);

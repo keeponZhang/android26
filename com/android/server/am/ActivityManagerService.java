@@ -3763,9 +3763,9 @@ public class ActivityManagerService extends IActivityManager.Stub
         startProcessLocked(app, hostingType, hostingNameStr, null /* abiOverride */,
                 null /* entryPoint */, null /* entryPointArgs */);
     }
-   /* 在注释1 处得到创建应用程序进程的用户ID ，在注释2 处对用户组ID (gids ）进行创
-            建和赋值。在注释3 处如果entryPoint 为null ，则赋值为android.app.ActivityThread ，这个
-            值就是应用程序进程主线程的类名。在注释4 处调用Process 的start 方蓓，将此前得到的
+   /* 在注释1处得到创建应用程序进程的用户ID，在注释2处对用户组ID (gids）进行创
+            建和赋值。在注释3 处如果entryPoint为null，则赋值为android.app.ActivityThread ，这个
+            值就是应用程序进程主线程的类名。在注释4 处调用Process的start方法，将此前得到的
             应用程序进程用户ID 和用户组ID 传进去，第一个参数ent可Point 我们得知是
             android.app.ActivityThread*/
     private final void startProcessLocked(ProcessRecord app, String hostingType,
@@ -4040,11 +4040,11 @@ public class ActivityManagerService extends IActivityManager.Stub
             }
         }
     }
-//    注释2 处的getHomelntent 方法如下所示：
+//    注释2处的getHomelntent方法如下所示：
 //  在getHomelntent 方桂中创建了Intent ，并将mTopAction 和mTopData 传人。mTopAction
-//    的值为Intent.ACTION_MAIN ，并且如果系统运行模式不是低级工厂模式，则将intent 的
-//    Category 设置为Intent.CATEGORY HOME ， 最后返回该Intent ，再回到AMS 的
-//    startHomeActivityLocked 方法
+//    的值为Intent.ACTION_MAIN，并且如果系统运行模式不是低级工厂模式，则将intent 的
+//    Category 设置为Intent.CATEGORY HOME，最后返回该Intent，再回到AMS的
+//    startHomeActivityLocked方法
     Intent getHomeIntent() {
         Intent intent = new Intent(mTopAction, mTopData != null ? Uri.parse(mTopData) : null);
         intent.setComponent(mTopComponent);
@@ -4056,13 +4056,13 @@ public class ActivityManagerService extends IActivityManager.Stub
     }
 //    注释1 处的mFactoryTest 代表系统的运行模式，系统的运行模式分为三种，分别是非
 //    工厂模式、低级工厂模式和高级工厂模式， mTopAction 则用来描述第一个被启动Activity
-//    组件的Action ，它的默认值为Intent.ACTION_MAIN 。因此注释l 处的代码的意思就是
+//    组件的Action ，它的默认值为Intent.ACTION_MAIN。因此注释l 处的代码的意思就是
 //    mFactoryTest 为FactoryTest.FACTORY_TEST一LOW_LEVEL （低级工厂模式）并且
 //    mTopAction 等于null 时，直接返回false 。
 //    假设系统的运行模式不是低级工厂模式，在注释3 处判断
-//    符合Action 为Intent.ACTION_MAIN 、Categ。可为Intent.CATEGORY_HOME 的应用程序
+//    符合Action为Intent.ACTION_MAIN 、Categ。可为Intent.CATEGORY_HOME的应用程序
 //    是否已经启动，如果没启动则调用注释4 处的方法启动该应用程序。这个被启动的应用程就是Launcher
-//   因为Launcher 的AndroidManifest 文件中的intent-filter 标签匹配了Action
+//   因为Launcher的AndroidManifest 文件中的intent-filter标签匹配了Action
 //    为Intent.ACTION_MAIN, Category 为Intent.CATEGORY_HOME
     boolean startHomeActivityLocked(int userId, String reason) {
         //判断工厂模式和mTopAction 的值，符合要求就继续执行下去
@@ -18152,7 +18152,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             return mServices.getRunningServiceControlPanelLocked(name);
         }
     }
-//    注释l 处调用mServices 的startServiceLocked 方毡， mServices 的类型是ActiveServices
+//    注释l处调用mServices的startServiceLocked方法， mServices的类型是ActiveServices
     @Override
     public ComponentName startService(IApplicationThread caller, Intent service,
             String resolvedType, boolean requireForeground, String callingPackage, int userId)
@@ -18303,7 +18303,7 @@ public class ActivityManagerService extends IActivityManager.Stub
                 || ActivityManager.checkUidPermission(INTERACT_ACROSS_USERS_FULL, componentUid)
                         == PackageManager.PERMISSION_GRANTED;
     }
-
+//    bindService 方也最后会调用ActiveServices 类型的对象mServices 的bindServiceLocked方法：
     public int bindService(IApplicationThread caller, IBinder token, Intent service,
             String resolvedType, IServiceConnection connection, int flags, String callingPackage,
             int userId) throws TransactionTooLargeException {

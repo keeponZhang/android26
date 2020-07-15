@@ -1483,7 +1483,7 @@ class ContextImpl extends Context {
         return startServiceCommon(service, true, user);
     }
 
-//    在注释l 处调用AMS 的代理IActivity Manager 的startService 方法，最终调用的是AMS
+//    在注释l处调用AMS 的代理IActivityManager的startService方法，最终调用的是AMS
 //    的startService 方法
     private ComponentName startServiceCommon(Intent service, boolean requireForeground,
             UserHandle user) {
@@ -1580,6 +1580,12 @@ class ContextImpl extends Context {
         return mMainThread.getHandler();
     }
 
+
+//    在注释l处调用了LoadedApk 类型的对象mPackagelnfo的getServiceDispatcher方法，
+//    它的主要作用是将ServiceConnection封装为IServiceConnection 类型的对象sd，从
+//    IServiceConnection的名字我们就能得知它实现了Binder机制，这样Service的绑定就支
+//    持了跨进程。接着在注释2 处我们又看见了熟悉的代码，最终会i周用AMS的bindService
+//    方法。
     private boolean bindServiceCommon(Intent service, ServiceConnection conn, int flags, Handler
             handler, UserHandle user) {
         // Keep this in sync with DevicePolicyManager.bindDeviceAdminServiceAsUser.
@@ -1588,7 +1594,7 @@ class ContextImpl extends Context {
             throw new IllegalArgumentException("connection is null");
         }
         if (mPackageInfo != null) {
-            sd = mPackageInfo.getServiceDispatcher(conn, getOuterContext(), handler, flags);
+            sd = mPackageInfo.getServiceDispatcher(conn, getOuterContext(), handler, flags);//1
         } else {
             throw new RuntimeException("Not supported in system context");
         }
@@ -1604,7 +1610,7 @@ class ContextImpl extends Context {
             int res = ActivityManager.getService().bindService(
                 mMainThread.getApplicationThread(), getActivityToken(), service,
                 service.resolveTypeIfNeeded(getContentResolver()),
-                sd, flags, getOpPackageName(), user.getIdentifier());
+                sd, flags, getOpPackageName(), user.getIdentifier());//2
             if (res < 0) {
                 throw new SecurityException(
                         "Not allowed to bind to service " + service);
