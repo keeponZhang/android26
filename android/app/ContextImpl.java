@@ -1392,31 +1392,39 @@ class ContextImpl extends Context {
         return registerReceiverInternal(receiver, user.getIdentifier(),
                 filter, broadcastPermission, scheduler, getOuterContext(), 0);
     }
-
+//    在注释l处判断如果LoadedApk类型的mPackageInfo不等于null，并且context不等
+//    于null就调用注释2处的代码，通过mPackageinfo的getReceiverDispatcher方法获取rd对象，
+//    否则就调用注释3处的代码来创建rd 象。注释2和注释3处的代码的目的都是要获取
+//    IIntentReceiver 型的rd 对象， IntentReceiver是一个Binder 接口，用于广播的跨进程的通
+//    信，它在LoadedApk.ReceiverDispatcher.InnerReceiver 中实现，
+//     回到registerReceiverInternal方怯，在注释4处调用了IActivityManager的registerReceiver
+//    方法，最终会i周用AMS 的registerReceiver方法，将llntentReceiver类型的rd传进去，
+//    这里之所以不直接传入BroadcastReceiver而是传入IlntentReceiver，是因为注册广播是－个
+//    跨进程过程，需要具有跨进程的通信功能的IlntentReceiver。
     private Intent registerReceiverInternal(BroadcastReceiver receiver, int userId,
             IntentFilter filter, String broadcastPermission,
             Handler scheduler, Context context, int flags) {
         IIntentReceiver rd = null;
         if (receiver != null) {
-            if (mPackageInfo != null && context != null) {
+            if (mPackageInfo != null && context != null) {//1
                 if (scheduler == null) {
                     scheduler = mMainThread.getHandler();
                 }
                 rd = mPackageInfo.getReceiverDispatcher(
                     receiver, context, scheduler,
-                    mMainThread.getInstrumentation(), true);
+                    mMainThread.getInstrumentation(), true);//2
             } else {
                 if (scheduler == null) {
                     scheduler = mMainThread.getHandler();
                 }
                 rd = new LoadedApk.ReceiverDispatcher(
-                        receiver, context, scheduler, null, true).getIIntentReceiver();
+                        receiver, context, scheduler, null, true).getIIntentReceiver();//3
             }
         }
         try {
             final Intent intent = ActivityManager.getService().registerReceiver(
                     mMainThread.getApplicationThread(), mBasePackageName, rd, filter,
-                    broadcastPermission, userId, flags);
+                    broadcastPermission, userId, flags);//4
             if (intent != null) {
                 intent.setExtrasClassLoader(getClassLoader());
                 intent.prepareToEnterProcess();

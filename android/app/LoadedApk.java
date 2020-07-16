@@ -1180,6 +1180,8 @@ public final class LoadedApk {
 
     static final class ReceiverDispatcher {
 
+        //这里需要注意的是，因为四大组件都是可以单独进程的
+        //这个Stub可以跟宿主是一个进程，也可能不是
         final static class InnerReceiver extends IIntentReceiver.Stub {
             final WeakReference<LoadedApk.ReceiverDispatcher> mDispatcher;
             final LoadedApk.ReceiverDispatcher mStrongRef;
@@ -1206,7 +1208,7 @@ public final class LoadedApk {
                 }
                 if (rd != null) {
                     rd.performReceive(intent, resultCode, data, extras,
-                            ordered, sticky, sendingUser);
+                            ordered, sticky, sendingUser);//1
                 } else {
                     // The activity manager dispatched a broadcast to a registered
                     // receiver in this process, but before it could be delivered the
@@ -1251,7 +1253,8 @@ public final class LoadedApk {
                 mCurIntent = intent;
                 mOrdered = ordered;
             }
-
+//            在注释l处执行了BroadcastReceiver类型的receiver 对象的onReceive方法，这样注册
+//            的广播接收者就收到了广播并得到了intent。
             public final Runnable getRunnable() {
                 return () -> {
                     final BroadcastReceiver receiver = mReceiver;
@@ -1292,7 +1295,7 @@ public final class LoadedApk {
                         intent.prepareToEnterProcess();
                         setExtrasClassLoader(cl);
                         receiver.setPendingResult(this);
-                        receiver.onReceive(mContext, intent);
+                        receiver.onReceive(mContext, intent);//1
                     } catch (Exception e) {
                         if (mRegistered && ordered) {
                             if (ActivityThread.DEBUG_BROADCAST) Slog.i(ActivityThread.TAG,
@@ -1367,11 +1370,14 @@ public final class LoadedApk {
         RuntimeException getUnregisterLocation() {
             return mUnregisterLocation;
         }
-
+//        在注释l处将广播的intent等信息封装为Args对象，在注释2处调用mActivityThread
+//        的post方法并传入了Args对象。这个mActivityThread 是一个Handler对象，具体指向的
+//        就是H，注释2处的代码就是将Args对象的getRunnable方法通过H发送到线程的消息队
+//        列中，
         public void performReceive(Intent intent, int resultCode, String data,
                 Bundle extras, boolean ordered, boolean sticky, int sendingUser) {
             final Args args = new Args(intent, resultCode, data, extras, ordered,
-                    sticky, sendingUser);
+                    sticky, sendingUser);//1
             if (intent == null) {
                 Log.wtf(TAG, "Null intent received");
             } else {
@@ -1381,7 +1387,7 @@ public final class LoadedApk {
                             + " seq=" + seq + " to " + mReceiver);
                 }
             }
-            if (intent == null || !mActivityThread.post(args.getRunnable())) {
+            if (intent == null || !mActivityThread.post(args.getRunnable())) {//2
                 if (mRegistered && ordered) {
                     IActivityManager mgr = ActivityManager.getService();
                     if (ActivityThread.DEBUG_BROADCAST) Slog.i(ActivityThread.TAG,
@@ -1493,11 +1499,12 @@ public final class LoadedApk {
                 mDispatcher = new WeakReference<LoadedApk.ServiceDispatcher>(sd);
             }
 
+            //这个是客户端的，服务会调用这个方法，所以会进行进程间通信，我们在Activity看不到，因为这里封装了
             public void connected(ComponentName name, IBinder service, boolean dead)
                     throws RemoteException {
                 LoadedApk.ServiceDispatcher sd = mDispatcher.get();
                 if (sd != null) {
-                    sd.connected(name, service, dead);
+                    sd.connected(name, service, dead);//1
                 }
             }
         }
@@ -1566,9 +1573,13 @@ public final class LoadedApk {
             return mUnbindLocation;
         }
 
+//        在注释l处调用Handler类型的对象mActivityThread的post方怯，mActivityThread 实
+//        际上指向的是H。因此，通过调用H的post方法将RunConnection对象的内容运行在主线
+//        程中。RunConnection 是LoadedApk 的内部类
         public void connected(ComponentName name, IBinder service, boolean dead) {
             if (mActivityThread != null) {
-                mActivityThread.post(new RunConnection(name, service, 0, dead));
+                //切换到主线程，然后最后还是调用doConnected
+                mActivityThread.post(new RunConnection(name, service, 0, dead));//1
             } else {
                 doConnected(name, service, dead);
             }
@@ -1632,6 +1643,7 @@ public final class LoadedApk {
             }
             // If there is a new service, it is now connected.
             if (service != null) {
+                //这里才是真正绑定服务传的ServiceConnection  //1
                 mConnection.onServiceConnected(name, service);
             }
         }

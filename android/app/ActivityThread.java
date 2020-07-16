@@ -995,10 +995,14 @@ public final class ActivityThread {
         // This function exists to make sure all receiver dispatching is
         // correctly ordered, since these are one-way calls and the binder driver
         // applies transaction ordering per object for such calls.
+//        在scheduleRegisteredReceiver方法中调用了IlntentReceiver类型的对象receiver的
+//        performReceive方法，IlntentReceiver 在前面提到过，用于广播的跨进程的通信， 它的具体
+//        实现为LoadedApk.ReceiverDispatcher.InnerReceiver
         public void scheduleRegisteredReceiver(IIntentReceiver receiver, Intent intent,
                 int resultCode, String dataStr, Bundle extras, boolean ordered,
                 boolean sticky, int sendingUser, int processState) throws RemoteException {
             updateProcessState(processState, false);
+            //receiver为什么也要用aidl来实现跨进程，因为广播接收者也是可以单独运行在一个进程的
             receiver.performReceive(intent, resultCode, dataStr, extras, ordered,
                     sticky, sendingUser);
         }
@@ -3458,9 +3462,16 @@ public final class ActivityThread {
             }
         }
     }
-
+//    在注释1处获取要绑定的Service。注释2处的BindServiceData的成员变量rebind的
+//    值为false ，这样会调用注释3处的代码来调用Service的onBind方法，到这里Service处于
+//    绑定状态了。如果rebind 的值为true 就会调用注释5 处的Service的onRebind方法，这一
+//    点结合前文的bindServiceLocked方法的注释5处，得出的结论就是：如果当前应用程序进
+//    程第一个与Service进行绑定，并且Service已经调用过onUnBind 方法，则会调用Service
+//    的onRebind 方法。handleBindService方法有两个分支，一个是绑定过Servive的情况，另
+//    一个是未绑定的情况，这里分析未绑定的情况，查看注释4处的代码，实际上是调用AMS
+//    的publishService方法
     private void handleBindService(BindServiceData data) {
-        Service s = mServices.get(data.token);
+        Service s = mServices.get(data.token);//1
         if (DEBUG_SERVICE)
             Slog.v(TAG, "handleBindService s=" + s + " rebind=" + data.rebind);
         if (s != null) {
@@ -3468,12 +3479,12 @@ public final class ActivityThread {
                 data.intent.setExtrasClassLoader(s.getClassLoader());
                 data.intent.prepareToEnterProcess();
                 try {
-                    if (!data.rebind) {
-                        IBinder binder = s.onBind(data.intent);
+                    if (!data.rebind) {//2
+                        IBinder binder = s.onBind(data.intent);//3
                         ActivityManager.getService().publishService(
-                                data.token, data.intent, binder);
+                                data.token, data.intent, binder);//4
                     } else {
-                        s.onRebind(data.intent);
+                        s.onRebind(data.intent);//5
                         ActivityManager.getService().serviceDoneExecuting(
                                 data.token, SERVICE_DONE_EXECUTING_ANON, 0, 0);
                     }

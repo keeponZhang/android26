@@ -1442,6 +1442,7 @@ public final class ActiveServices {
                 clist = new ArrayList<ConnectionRecord>();
                 s.connections.put(binder, clist);
             }
+            //这里是重点，会往里面放连接，表示有多少客户端连接了
             clist.add(c);
             b.connections.add(c);//1.2
             if (activity != null) {
@@ -1524,7 +1525,10 @@ public final class ActiveServices {
 
         return 1;
     }
-
+//    注释l 处的代码在前面介绍过，c.conn 指的是IServiceConnection，它是
+//    ServiceConnection 在本地的代理，用于解决当前应用程序进程和Service跨进程通信的问题，
+//    具体实现为ServiceDispatcher.InnerConnection，其中ServiceDispatcher是LoadedApk的内部
+//    类，
     void publishServiceLocked(ServiceRecord r, Intent intent, IBinder service) {
         final long origId = Binder.clearCallingIdentity();
         try {
@@ -1533,8 +1537,10 @@ public final class ActiveServices {
             if (r != null) {
                 Intent.FilterComparison filter
                         = new Intent.FilterComparison(intent);
+                //IntentBindRecord这个是存在服务端的
                 IntentBindRecord b = r.bindings.get(filter);
                 if (b != null && !b.received) {
+                    //给IntentBindRecord的binder赋值
                     b.binder = service;
                     b.requested = true;
                     b.received = true;
@@ -1553,7 +1559,8 @@ public final class ActiveServices {
                             }
                             if (DEBUG_SERVICE) Slog.v(TAG_SERVICE, "Publishing to: " + c);
                             try {
-                                c.conn.connected(r.name, service, false);
+                                //其实这里c.conn是代理对象，通过binder驱动，会调用到客户端的存根
+                                c.conn.connected(r.name, service, false);//1
                             } catch (Exception e) {
                                 Slog.w(TAG, "Failure sending service " + r.name +
                                       " to connection " + c.conn.asBinder() +

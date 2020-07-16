@@ -168,6 +168,8 @@ public final class BroadcastQueue {
                 case BROADCAST_INTENT_MSG: {
                     if (DEBUG_BROADCAST) Slog.v(
                             TAG_BROADCAST, "Received BROADCAST_INTENT_MSG");
+//                    在handleMessage方法中调用了processNextBroadcast方法，对无序广播和有序广
+//                    播分别进行处理，旨在将广播发送给广播接收者
                     processNextBroadcast(true);
                 } break;
                 case BROADCAST_TIMEOUT_MSG: {
@@ -379,7 +381,8 @@ public final class BroadcastQueue {
                 r.resultExtras, r.resultAbort, false);
         scheduleBroadcastsLocked();
     }
-
+//    在注释l处向BroadcastHandler类型的mHandler对象发送了BROADCAST_INTENT_MSG
+//    类型的消息，这个消息在BroadcastHandler的handleMessage方法中进行处理
     public void scheduleBroadcastsLocked() {
         if (DEBUG_BROADCAST) Slog.v(TAG_BROADCAST, "Schedule broadcasts ["
                 + mQueueName + "]: current="
@@ -388,7 +391,7 @@ public final class BroadcastQueue {
         if (mBroadcastsScheduled) {
             return;
         }
-        mHandler.sendMessage(mHandler.obtainMessage(BROADCAST_INTENT_MSG, this));
+        mHandler.sendMessage(mHandler.obtainMessage(BROADCAST_INTENT_MSG, this));//1
         mBroadcastsScheduled = true;
     }
 
@@ -478,18 +481,20 @@ public final class BroadcastQueue {
             }
         }
     }
-
+//    在注释l和注释2 处的代码表示如果广播接收者所在的应用程序进程存在并且正在运行，
+//    则执行注释3处的代码，表示用广播接收者所在的应用程序进程来接收广播，这里app.thread
+//    指的是ApplicatioThread
     void performReceiveLocked(ProcessRecord app, IIntentReceiver receiver,
             Intent intent, int resultCode, String data, Bundle extras,
             boolean ordered, boolean sticky, int sendingUser) throws RemoteException {
         // Send the intent to the receiver asynchronously using one-way binder calls.
-        if (app != null) {
-            if (app.thread != null) {
+        if (app != null) {//1
+            if (app.thread != null) {//2
                 // If we have an app thread, do the call through that so it is
                 // correctly ordered with other one-way calls.
                 try {
                     app.thread.scheduleRegisteredReceiver(receiver, intent, resultCode,
-                            data, extras, ordered, sticky, sendingUser, app.repProcState);
+                            data, extras, ordered, sticky, sendingUser, app.repProcState);//3
                 // TODO: Uncomment this when (b/28322359) is fixed and we aren't getting
                 // DeadObjectException when the process isn't actually dead.
                 //} catch (DeadObjectException ex) {
@@ -513,6 +518,8 @@ public final class BroadcastQueue {
                     sticky, sendingUser);
         }
     }
+    //708这里省去了大部分的代码，这些代码是用来检查广播发送者和广播接收者的权限的。
+    //如果通过了权限的检查，则会调用注释l处的performReceiveLocked方法
 
     private void deliverToRegisteredReceiverLocked(BroadcastRecord r,
             BroadcastFilter filter, boolean ordered, int index) {
@@ -702,7 +709,7 @@ public final class BroadcastQueue {
             } else {
                 performReceiveLocked(filter.receiverList.app, filter.receiverList.receiver,
                         new Intent(r.intent), r.resultCode, r.resultData,
-                        r.resultExtras, r.ordered, r.initialSticky, r.userId);
+                        r.resultExtras, r.ordered, r.initialSticky, r.userId);//1
             }
             if (ordered) {
                 r.state = BroadcastRecord.CALL_DONE_RECEIVE;
@@ -816,7 +823,12 @@ public final class BroadcastQueue {
         }
         return true;
     }
-
+//    从前面BroadcastHandler方法中我们得知传入的参数fromMsg的值为true，因此在注释l
+//    处将rnBroadcastsScheduled 设置为flase，表示对于此前发来的BROADCAST_INTENT_ MSG
+//    类型的消息已经处理了。注释2处的mParallelBroadcasts列表用来存储无序广播，通过while
+//    循环将mParallelBroadcasts列表中的无序广播发送给对应的广播接收者。在注释3处获取
+//    每一个mParallelBroadcasts列表中存储的BroadcastRecord类型的r 对象。在注释4处将
+//    这些r对象描述的广播发送给对应的广播接收者，
     final void processNextBroadcast(boolean fromMsg) {
         synchronized(mService) {
             BroadcastRecord r;
@@ -827,14 +839,16 @@ public final class BroadcastQueue {
                     + mOrderedBroadcasts.size() + " ordered broadcasts");
 
             mService.updateCpuStats();
-
+//            已经处理了BROADCAST_INTENT_MSG类型的消息
             if (fromMsg) {
-                mBroadcastsScheduled = false;
+                mBroadcastsScheduled = false;//1
             }
 
             // First, deliver any non-serialized broadcasts right away.
+            //遍历存储无序广播的mParallelBroadcasts列表
             while (mParallelBroadcasts.size() > 0) {
-                r = mParallelBroadcasts.remove(0);
+                //获取无序广播
+                r = mParallelBroadcasts.remove(0);//3
                 r.dispatchTime = SystemClock.uptimeMillis();
                 r.dispatchClockTime = System.currentTimeMillis();
 
@@ -855,7 +869,7 @@ public final class BroadcastQueue {
                     if (DEBUG_BROADCAST)  Slog.v(TAG_BROADCAST,
                             "Delivering non-ordered on [" + mQueueName + "] to registered "
                             + target + ": " + r);
-                    deliverToRegisteredReceiverLocked(r, (BroadcastFilter)target, false, i);
+                    deliverToRegisteredReceiverLocked(r, (BroadcastFilter)target, false, i);//4
                 }
                 addBroadcastToHistoryLocked(r);
                 if (DEBUG_BROADCAST_LIGHT) Slog.v(TAG_BROADCAST, "Done with parallel broadcast ["

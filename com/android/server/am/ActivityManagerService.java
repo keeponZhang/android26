@@ -18608,7 +18608,12 @@ public class ActivityManagerService extends IActivityManager.Stub
         }
         return didSomething;
     }
-
+//    在注释l处通过getRecordForAppLocked方法得到ProcessRecord类型的callerApp对象，
+//    它用于描述请求AMS注册广播接收者的Activity所在的应用程序进程。在注释2处根据传
+//    人的IntentFilter类型filter得到actions列表，根据actions列表和userlds (userIds可以理解
+//    为应用程序的uid）得到所有的粘性广播的intent，并在注释3处传入到stickyIntents中。接
+//    下来从stickyIntents中找到匹配传人的参数filter 的粘性广播的intent，在注释4处将这些
+//    intent存入到allSticky列表中，从这里可以看出粘性广播是存储在AMS中的。
     public Intent registerReceiver(IApplicationThread caller, String callerPackage,
             IIntentReceiver receiver, IntentFilter filter, String permission, int userId,
             int flags) {
@@ -18622,7 +18627,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         boolean instantApp;
         synchronized(this) {
             if (caller != null) {
-                callerApp = getRecordForAppLocked(caller);
+                callerApp = getRecordForAppLocked(caller);//1
                 if (callerApp == null) {
                     throw new SecurityException(
                             "Unable to find app for caller " + caller
@@ -18647,7 +18652,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             userId = mUserController.handleIncomingUser(callingPid, callingUid, userId, true,
                     ALLOW_FULL_ONLY, "registerReceiver", callerPackage);
 
-            Iterator<String> actions = filter.actionsIterator();
+            Iterator<String> actions = filter.actionsIterator();//2
             if (actions == null) {
                 ArrayList<String> noAction = new ArrayList<String>(1);
                 noAction.add(null);
@@ -18662,11 +18667,12 @@ public class ActivityManagerService extends IActivityManager.Stub
                     ArrayMap<String, ArrayList<Intent>> stickies = mStickyBroadcasts.get(id);
                     if (stickies != null) {
                         ArrayList<Intent> intents = stickies.get(action);
+                        //这里返回不为空，说明有这类型action的广播接受者
                         if (intents != null) {
                             if (stickyIntents == null) {
                                 stickyIntents = new ArrayList<Intent>();
                             }
-                            stickyIntents.addAll(intents);
+                            stickyIntents.addAll(intents);//3
                         }
                     }
                 }
@@ -18677,6 +18683,7 @@ public class ActivityManagerService extends IActivityManager.Stub
         if (stickyIntents != null) {
             final ContentResolver resolver = mContext.getContentResolver();
             // Look for any matching sticky broadcasts...
+            //遍历寻找匹配的粘性广播
             for (int i = 0, N = stickyIntents.size(); i < N; i++) {
                 Intent intent = stickyIntents.get(i);
                 // Don't provided intents that aren't available to instant apps.
@@ -18692,7 +18699,7 @@ public class ActivityManagerService extends IActivityManager.Stub
                     if (allSticky == null) {
                         allSticky = new ArrayList<Intent>();
                     }
-                    allSticky.add(intent);
+                    allSticky.add(intent);//4
                 }
             }
         }
@@ -18703,17 +18710,23 @@ public class ActivityManagerService extends IActivityManager.Stub
         if (receiver == null) {
             return sticky;
         }
-
+//        在注释l处获取ReceiverList列表，如果为空则在注释2处创建，ReceiverList继承自
+//        ArrayList，用来存储广播接收者。在注释3处创建BroadcastFilter并传入此前创建的
+//        ReceiverList, BroadcastFilter用来描述注册的广播接收者，并在注释4处通过add方怯将自
+//        身添加到ReceiverList中。在注释5处将BroadcastFilter 添加到IntentResolver类型的
+//        rnReceiverResolver中，这样当AMS接收到广播时就可以从rnReceiverResolver中找到对应
+//        的广播接收者了，从而达到了注册广播的目的。
         synchronized (this) {
             if (callerApp != null && (callerApp.thread == null
                     || callerApp.thread.asBinder() != caller.asBinder())) {
                 // Original caller already died
                 return null;
             }
-            ReceiverList rl = mRegisteredReceivers.get(receiver.asBinder());
+            ReceiverList rl = mRegisteredReceivers.get(receiver.asBinder());//1
             if (rl == null) {
+                //储存客户端广播接受者信息
                 rl = new ReceiverList(this, callerApp, callingPid, callingUid,
-                        userId, receiver);
+                        userId, receiver);//2
                 if (rl.app != null) {
                     rl.app.receivers.add(rl);
                 } else {
@@ -18741,13 +18754,15 @@ public class ActivityManagerService extends IActivityManager.Stub
                         + " was previously registered for user " + rl.userId
                         + " callerPackage is " + callerPackage);
             }
+//            BroadcastFilter用来描述注册的广播接收者
             BroadcastFilter bf = new BroadcastFilter(filter, rl, callerPackage,
-                    permission, callingUid, userId, instantApp, visibleToInstantApps);
-            rl.add(bf);
+                    permission, callingUid, userId, instantApp, visibleToInstantApps);//3
+            //rl也是一个arrayList,rl
+            rl.add(bf);//4
             if (!bf.debugCheck()) {
                 Slog.w(TAG, "==> For Dynamic broadcast");
             }
-            mReceiverResolver.addFilter(bf);
+            mReceiverResolver.addFilter(bf);//5
 
             // Enqueue broadcasts for all existing stickies that match
             // this filter.
@@ -18994,6 +19009,11 @@ public class ActivityManagerService extends IActivityManager.Stub
         }
     }
 
+    //19617
+//    这里省略了很多代码， 前面的工作主要是将动态注册的广播接收者和静态注册的广播
+//    接收者按照优先级高低不同存储在不同的列表中，再将这两个列表合并到receivers列表中，
+//    这样receivers列表包含了所有的广播接收者（无序广播和有序广播。在注释l 处创建BroadcastRecord
+//    对象将receivers传进去，在注释2 处调用BroadcastQueue的 scheduleBroadcastsLocked方法。
     final int broadcastIntentLocked(ProcessRecord callerApp,
             String callerPackage, Intent intent, String resolvedType,
             IIntentReceiver resultTo, int resultCode, String resultData,
@@ -19600,7 +19620,7 @@ public class ActivityManagerService extends IActivityManager.Stub
             BroadcastRecord r = new BroadcastRecord(queue, intent, callerApp,
                     callerPackage, callingPid, callingUid, callerInstantApp, resolvedType,
                     requiredPermissions, appOp, brOptions, receivers, resultTo, resultCode,
-                    resultData, resultExtras, ordered, sticky, false, userId);
+                    resultData, resultExtras, ordered, sticky, false, userId);//1
 
             if (DEBUG_BROADCAST) Slog.v(TAG_BROADCAST, "Enqueueing ordered broadcast " + r
                     + ": prev had " + queue.mOrderedBroadcasts.size());
@@ -19627,7 +19647,7 @@ public class ActivityManagerService extends IActivityManager.Stub
                 }
             } else {
                 queue.enqueueOrderedBroadcastLocked(r);
-                queue.scheduleBroadcastsLocked();
+                queue.scheduleBroadcastsLocked();//2
             }
         } else {
             // There was nobody interested in the broadcast, but we still want to record
@@ -19677,21 +19697,25 @@ public class ActivityManagerService extends IActivityManager.Stub
         rotateBroadcastStatsIfNeededLocked();
         mCurBroadcastStats.addBackgroundCheckViolation(action, targetPackage);
     }
-
+//    verifyBroadcastLocked方法主要验证广播是否恢复，在注释l处验证intent是否不为
+//    null并且有文件描述符。注释2处获得intent中的flag。注释3处如果系统正在启动过程中，
+//    判断如果flag设置为FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT(启动检查
+//    时只接受动态注册的广播接收者）则不做处理，如果不是则在注释4 处判断如果flag没有
+//    设置为FLAG_RECEIVER_REGISTERED_ONLY(只接受动态注册的广播接收者）则会抛出异常
     final Intent verifyBroadcastLocked(Intent intent) {
         // Refuse possible leaked file descriptors
-        if (intent != null && intent.hasFileDescriptors() == true) {
+        if (intent != null && intent.hasFileDescriptors() == true) {//1
             throw new IllegalArgumentException("File descriptors passed in Intent");
         }
 
-        int flags = intent.getFlags();
+        int flags = intent.getFlags();//2
 
         if (!mProcessesReady) {
             // if the caller really truly claims to know what they're doing, go
             // ahead and allow the broadcast without launching any receivers
-            if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT) != 0) {
+            if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT) != 0) {//3
                 // This will be turned into a FLAG_RECEIVER_REGISTERED_ONLY later on if needed.
-            } else if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY) == 0) {
+            } else if ((flags&Intent.FLAG_RECEIVER_REGISTERED_ONLY) == 0) {//4
                 Slog.e(TAG, "Attempt to launch receivers of broadcast intent " + intent
                         + " before boot completion");
                 throw new IllegalStateException("Cannot broadcast before boot completed");
@@ -19726,7 +19750,8 @@ public class ActivityManagerService extends IActivityManager.Stub
             boolean serialized, boolean sticky, int userId) {
         enforceNotIsolatedCaller("broadcastIntent");
         synchronized(this) {
-            intent = verifyBroadcastLocked(intent);
+            //验证广播是否合法
+            intent = verifyBroadcastLocked(intent);//1
 
             final ProcessRecord callerApp = getRecordForAppLocked(caller);
             final int callingPid = Binder.getCallingPid();
@@ -19736,7 +19761,7 @@ public class ActivityManagerService extends IActivityManager.Stub
                     callerApp != null ? callerApp.info.packageName : null,
                     intent, resolvedType, resultTo, resultCode, resultData, resultExtras,
                     requiredPermissions, appOp, bOptions, serialized, sticky,
-                    callingPid, callingUid, userId);
+                    callingPid, callingUid, userId);//2
             Binder.restoreCallingIdentity(origId);
             return res;
         }
