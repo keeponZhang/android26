@@ -18614,6 +18614,7 @@ public class ActivityManagerService extends IActivityManager.Stub
 //    为应用程序的uid）得到所有的粘性广播的intent，并在注释3处传入到stickyIntents中。接
 //    下来从stickyIntents中找到匹配传人的参数filter 的粘性广播的intent，在注释4处将这些
 //    intent存入到allSticky列表中，从这里可以看出粘性广播是存储在AMS中的。
+    //receiver参数值得注意，是个代理对象，支持跨进程传输
     public Intent registerReceiver(IApplicationThread caller, String callerPackage,
             IIntentReceiver receiver, IntentFilter filter, String permission, int userId,
             int flags) {

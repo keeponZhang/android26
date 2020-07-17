@@ -731,11 +731,15 @@ public abstract class ContentResolver {
      * @return A Cursor object, which is positioned before the first entry, or null
      * @see Cursor
      */
+//    在注释l处通过acquireUnstableProvider方法返回IContentProvider类型的
+//    unstableProvider对象，在注释2处调用unstableProvider 的query方法。IContentProvider是
+//    ContentProvider 在本地的代理，具体的实现为ContentProvider，我们查看ContentProvider
+//    的acquireUnstableProvider方法做了什么，
     public final @Nullable Cursor query(final @RequiresPermission.Read @NonNull Uri uri,
             @Nullable String[] projection, @Nullable Bundle queryArgs,
             @Nullable CancellationSignal cancellationSignal) {
         Preconditions.checkNotNull(uri, "uri");
-        IContentProvider unstableProvider = acquireUnstableProvider(uri);
+        IContentProvider unstableProvider = acquireUnstableProvider(uri);//1
         if (unstableProvider == null) {
             return null;
         }
@@ -752,7 +756,7 @@ public abstract class ContentResolver {
             }
             try {
                 qCursor = unstableProvider.query(mPackageName, uri, projection,
-                        queryArgs, remoteCancellationSignal);
+                        queryArgs, remoteCancellationSignal);//2
             } catch (DeadObjectException e) {
                 // The remote process has died...  but we only hold an unstable
                 // reference though, so we might recover!!!  Let's try!!!!
@@ -1771,13 +1775,17 @@ public abstract class ContentResolver {
      * @return The ContentProvider for the given URI, or null if no content provider is found.
      * @hide
      */
+//    在注释l处检查uri的scheme 是否等于“content”(SCHEME_CONTENT 的值为"content”),
+//    如果不是则返回null。在注释2 处i周用了acquireUnstableProvider方法，这是个抽象方法，
+//    它在ContentResolver的子类ApplicationContentResolver 中实现，ApplicationContentResolver
+//    是Contextlmpl的静态内部类，
     public final IContentProvider acquireUnstableProvider(Uri uri) {
-        if (!SCHEME_CONTENT.equals(uri.getScheme())) {
+        if (!SCHEME_CONTENT.equals(uri.getScheme())) {//1
             return null;
         }
         String auth = uri.getAuthority();
         if (auth != null) {
-            return acquireUnstableProvider(mContext, uri.getAuthority());
+            return acquireUnstableProvider(mContext, uri.getAuthority());//2
         }
         return null;
     }

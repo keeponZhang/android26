@@ -238,6 +238,12 @@ class ContextImpl extends Context {
         return null;
     }
 
+//    getContentResolver 方怯中返回了ApplicationContentResolver（ContextImpl的内部类）类型的mContentResolver
+//    对象，ApplicationContentResolver 是Contextlmpl中的静态内部类，继承自ContentResolver,
+//    它在Contextlmpl的构造方怯中被创建，这说明当我们调用ContentResolver的insert、query、
+//    update 等方法时就会启动ContentProvider。这里以query方法来进行举例，query可方法在
+//    ApplicationContentResolver的父类ContentResolver中实现，有3个重载方法，最终会调用
+//    如下的query方法：
     @Override
     public ContentResolver getContentResolver() {
         return mContentResolver;
@@ -2508,7 +2514,8 @@ class ContextImpl extends Context {
         public boolean releaseProvider(IContentProvider provider) {
             return mMainThread.releaseProvider(provider, true);
         }
-
+//        在acquireUnstableProvider 方怯中返回了ActivityThread 类型的mMainThread 对象的
+//        acquireProvider 方怯：
         @Override
         protected IContentProvider acquireUnstableProvider(Context c, String auth) {
             return mMainThread.acquireProvider(c,
