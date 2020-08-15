@@ -65,6 +65,11 @@ public class ContextWrapper extends Context {
      * 
      * @param base The new base context for this wrapper.
      */
+//    这个base一路传递过来指的是Contextimpl，它是Context的实现类，将ContextImpl
+//    赋值给ContextWrapper的Context 类型的成员变量mBase这样在ContextWrapper中就可
+//    以使用Context的方法，而Application继承自ContextWrapper，同样可以使用Context的
+//    方法。Application的attach方法的作用就是使Application可以使用Context的方法，这样
+//    Application才可以用来代表ApplicationContext 。
     protected void attachBaseContext(Context base) {
         if (mBase != null) {
             throw new IllegalStateException("Base context already set");

@@ -185,6 +185,8 @@ public class Application extends ContextWrapper implements ComponentCallbacks2 {
     /**
      * @hide
      */
+//    在attach方法调用了attachBaseContext方法，它在Application的父类ContextWrapper
+//    中实现，
     /* package */ final void attach(Context context) {
         attachBaseContext(context);
         mLoadedApk = ContextImpl.getImpl(context).mPackageInfo;

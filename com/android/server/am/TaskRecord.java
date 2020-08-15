@@ -120,7 +120,12 @@ import static com.android.server.am.ActivityStackSupervisor.PAUSE_IMMEDIATELY;
 import static com.android.server.am.ActivityStackSupervisor.PRESERVE_WINDOWS;
 
 import static java.lang.Integer.MAX_VALUE;
-
+//TaskRecord用来描述一个Activ句任务栈，其内部也有很多的成员变量，这里挑出一
+//些重要的成员变量进行介绍，如表6-2所示。
+//从表6 -2可以发现TaskRecord的作用，其内部存储了任务栈的所有信息，包括任务栈
+//的唯一标识符、任务校的倾向性、任务栈中的Activity记录和AMS的引用等，需要注意的
+//是其中含有ActivityStack，也就是当前Activity任务枝所归属的ActivityStack，我们接着来
+//查看ActivityStack。
 final class TaskRecord extends ConfigurationContainer implements TaskWindowContainerListener {
     private static final String TAG = TAG_WITH_CLASS_NAME ? "TaskRecord" : TAG_AM;
     private static final String TAG_ADD_REMOVE = TAG + POSTFIX_ADD_REMOVE;
@@ -188,12 +193,14 @@ final class TaskRecord extends ConfigurationContainer implements TaskWindowConta
     public static final int REPARENT_KEEP_STACK_AT_FRONT = 1;
     // Do not move the stack as a part of reparenting
     public static final int REPARENT_LEAVE_STACK_IN_PLACE = 2;
-
+//    任务栈的唯一标识符
     final int taskId;       // Unique identifier for this task.
+//   任务栈的倾向性
     String affinity;        // The affinity name for this task, or null; may change identity.
     String rootAffinity;    // Initial base affinity, or null; does not change from initial root.
     final IVoiceInteractionSession voiceSession;    // Voice interaction session driving task
     final IVoiceInteractor voiceInteractor;         // Associated interactor to provide to app
+//    启动这个任务栈的Intent
     Intent intent;          // The original intent that started the task.
     Intent affinityIntent;  // Intent of affinity-moved activity that started this task.
     int effectiveUid;       // The current effective uid of the identity of this task.
@@ -251,6 +258,7 @@ final class TaskRecord extends ConfigurationContainer implements TaskWindowConta
     TaskDescription lastTaskDescription = new TaskDescription();
 
     /** List of all activities in the task arranged in history order */
+//    按照历史顺序排列的Activity记录
     final ArrayList<ActivityRecord> mActivities;
 
     /** Current stack. Setter must always be used to update the value. */
@@ -296,7 +304,7 @@ final class TaskRecord extends ConfigurationContainer implements TaskWindowConta
     // For relaunching the task from recents as though it was launched by the original launcher.
     int mCallingUid;
     String mCallingPackage;
-
+    //AMS的引用
     final ActivityManagerService mService;
 
     // Whether or not this task covers the entire screen; by default tasks are fullscreen.

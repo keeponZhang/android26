@@ -266,7 +266,17 @@ public final class SystemServer {
         // Remember if it's runtime restart(when sys.boot_completed is already set) or reboot
         mRuntimeRestart = "1".equals(SystemProperties.get("sys.boot_completed"));
     }
-
+//    SystemServer的run方法已经在2.3.2节讲解过，这里再次讲解一遍。在注释l处加
+//    载了动态库libandroid_servers.so。接下来在注释2处创建SystemServiceManager，它会
+//    对系统的服务进行创建、启动和生命周期管理。在注释3处的startBootstrapServices
+//    方法中用SystemServiceManager启动了ActivityManagerService、PowerManagerService、
+//    PackageManagerService等服务。在注释4处的startCoreServices方法中则启动了
+//    DropBoxManagerService、BatteryService、UsageStatsService和WebViewUpdateService。在
+//    注释5处的startOtherServices方法中启动了CameraService、AlarmManagerService、
+//    VrManagerService等服务。这些服务的父类均为SystemService。从注释3 、注释4、注释5
+//    处的方法可以看出，官方把系统服务分为了3种类型，分别是引导服务、核心服务和其他
+//    服务，其中其他服务是一些非紧要和不需要立即启动的服务。我们主要来查看引导服务
+//    AMS 是如何启动的
     private void run() {
         try {
             traceBeginAndSlog("InitBeforeStartServices");
@@ -366,20 +376,24 @@ public final class SystemServer {
             android.os.Process.setThreadPriority(
                 android.os.Process.THREAD_PRIORITY_FOREGROUND);
             android.os.Process.setCanSelfBackground(false);
+            //创建消息Looper
             Looper.prepareMainLooper();
 
             // Initialize native services.
-            System.loadLibrary("android_servers");
+            //加载了动态库libandroid servers.so
+            System.loadLibrary("android_servers");//1
 
             // Check whether we failed to shut down last time we tried.
             // This call may not return.
             performPendingShutdown();
 
             // Initialize the system context.
+            //创建系统的Co日text
             createSystemContext();
 
             // Create the system service manager.
-            mSystemServiceManager = new SystemServiceManager(mSystemContext);
+            //创建SystemServiceManager
+            mSystemServiceManager = new SystemServiceManager(mSystemContext);//2
             mSystemServiceManager.setRuntimeRestarted(mRuntimeRestart);
             LocalServices.addService(SystemServiceManager.class, mSystemServiceManager);
             // Prepare the thread pool for init tasks that can be parallelized
@@ -391,9 +405,12 @@ public final class SystemServer {
         // Start services.
         try {
             traceBeginAndSlog("StartServices");
-            startBootstrapServices();
-            startCoreServices();
-            startOtherServices();
+            //启动引导服务
+            startBootstrapServices();//3
+            //启动核心服务
+            startCoreServices();//4
+            //启动其他服务
+            startOtherServices();//5
             SystemServerInitThreadPool.shutdown();
         } catch (Throwable ex) {
             Slog.e("System", "******************************************");
@@ -488,6 +505,8 @@ public final class SystemServer {
      * is also entwined in these dependencies, it should be initialized in one of
      * the other functions.
      */
+//    在注释l处调用了SystemServiceManager的startService方法，该方法的参数是
+//    ActivityManagerService.Lifecycle.class:
     private void startBootstrapServices() {
         Slog.i(TAG, "Reading configuration...");
         final String TAG_SYSTEM_CONFIG = "ReadingSystemConfig";
@@ -499,7 +518,7 @@ public final class SystemServer {
         // create critical directories such as /data/user with the appropriate
         // permissions.  We need this to complete before we initialize other services.
         traceBeginAndSlog("StartInstaller");
-        Installer installer = mSystemServiceManager.startService(Installer.class);
+        Installer installer = mSystemServiceManager.startService(Installer.class);//1
         traceEnd();
 
         // In some cases after launching an app we need to access device identifiers,
@@ -511,7 +530,7 @@ public final class SystemServer {
         // Activity manager runs the show.
         traceBeginAndSlog("StartActivityManager");
         mActivityManagerService = mSystemServiceManager.startService(
-                ActivityManagerService.Lifecycle.class).getService();
+                ActivityManagerService.Lifecycle.class).getService();//1
         mActivityManagerService.setSystemServiceManager(mSystemServiceManager);
         mActivityManagerService.setInstaller(installer);
         traceEnd();

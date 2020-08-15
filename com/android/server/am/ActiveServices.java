@@ -2101,16 +2101,21 @@ public final class ActiveServices {
             }
         }
     }
-//    在注释l 处得到ServiceRecord 的processName值并赋给procName， 其中processName
-//    用来描述Service 想要在哪个进程中运行，默认是当前进程， 我们也可以在AndroidManifest
-//    文件中设置android:process 属性来新开启一个进程运行Service 。在注释2处将procName
-//    和Service 的uid 传入到AMS 的getProcessRecordLocked方法中，查询是否存在一个与
-//    Service 对应的ProcessRecord 类型的对象app, ProcessRecord 主要用来描述运行的应用程序
-//    进程的信息。在注释5 处判断Service 对应的app 为null 则说明用来运行Service 的应用程
-//    序进程不存在，则调用注释6 处的AMS 的startProcessLocked 方法来创建对应的应用程序
-//    进程，关于创建应用程序进程请查看第3 章的内容， 这里只讨论没有设置android: process
-//    属性，即应用程序进程存在的情况。在注释3处判断如果用来运行Service 的应用程序进程
-//    存在，则调用注释4 处的realStartServiceLocked 方法来启动Service:
+//    在注释l处得到ServiceRecord的processName值并赋给procName，其中processName
+//    用来描述Service想要在哪个进程中运行，默认是当前进程，我们也可以在AndroidManifest
+//    文件中设置android:process属性来新开启一个进程运行Service。在注释2处将procName
+//    和Service的uid传入到AMS的getProcessRecordLocked方法中，查询是否存在一个与
+//    Service对应的ProcessRecord类型的对象app,ProcessRecord主要用来描述运行的应用程序
+//    进程的信息。在注释5处判断Service对应的app为null则说明用来运行Service的应用程
+//    序进程不存在，则调用注释6 处的AMS的startProcessLocked方法来创建对应的应用程序
+//    进程，关于创建应用程序进程请查看第3章的内容，这里只讨论没有设置android:process
+//    属性，即应用程序进程存在的情况。在注释3处判断如果用来运行Service的应用程序进程
+//    存在，则调用注释4处的realStartServiceLocked方法来启动Service:
+
+//    总结一下，AMS与应用程序进程的关系主要有以下两点：
+//      1·启动应用程序时AMS会检查这个应用程序需要的应用程序进程是否存在。
+//      2·如果需要的应用程序进程不存在，AMS就会请求Zygote进程创建需要的应用程序进程。
+
     private String bringUpServiceLocked(ServiceRecord r, int intentFlags, boolean execInFg,
             boolean whileRestarting, boolean permissionsReviewRequired)
             throws TransactionTooLargeException {
@@ -2167,7 +2172,7 @@ public final class ActiveServices {
         }
 
         final boolean isolated = (r.serviceInfo.flags&ServiceInfo.FLAG_ISOLATED_PROCESS) != 0;
-        //获取Service 想要在哪个进程中运行
+        //获取Service想要在哪个进程中运行
         final String procName = r.processName;//1
         String hostingType = "service";
         ProcessRecord app;
@@ -2176,7 +2181,7 @@ public final class ActiveServices {
             app = mAm.getProcessRecordLocked(procName, r.appInfo.uid, false);//2
             if (DEBUG_MU) Slog.v(TAG_MU, "bringUpServiceLocked: appInfo.uid=" + r.appInfo.uid
                         + " app=" + app);
-            //如果运行Service 的应用程序进程存在
+            //如果运行Service的应用程序进程存在
             if (app != null && app.thread != null) {//3
                 try {
                     app.addPackage(r.appInfo.packageName, r.appInfo.versionCode, mAm.mProcessStats);
@@ -2208,7 +2213,7 @@ public final class ActiveServices {
 
         // Not running -- get it started, and enqueue this service record
         // to be executed when the app comes up.
-        //如果用来运行Serv 工ce 的应用程序进程不存在
+        //如果用来运行Service的应用程序进程不存在
         if (app == null && !permissionsReviewRequired) {//5
             if ((app=mAm.startProcessLocked(procName, r.appInfo, true, intentFlags,
                     hostingType, r.name, false, isolated, false)) == null) {//6

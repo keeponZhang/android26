@@ -253,7 +253,9 @@ class ContextImpl extends Context {
     public Looper getMainLooper() {
         return mMainThread.getLooper();
     }
-
+//    如果LoadedApk 类型的mPackagelnfo不为null，则调用LoadedApk的getApplication
+//    方法，否则调用AvtivityThread的getApplication方法。由于应用程序这时已经启动，因此
+//    LoadedApk不会为null，则会调用LoadedApk的getApplication方法，如下所示：
     @Override
     public Context getApplicationContext() {
         return (mPackageInfo != null) ?

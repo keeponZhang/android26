@@ -453,6 +453,7 @@ import dalvik.system.VMRuntime;
 import libcore.io.IoUtils;
 import libcore.util.EmptyArray;
 
+//这里的ActivityManagerService继承的是IActivityManager.Stub，之前继承的是ActivityManagerNative
 public class ActivityManagerService extends IActivityManager.Stub
         implements Watchdog.Monitor, BatteryStatsImpl.BatteryCallback {
 

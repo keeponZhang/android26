@@ -6902,6 +6902,14 @@ public class Activity extends ContextThemeWrapper
         mParent = parent;
     }
 
+//    在注释2处创建PhoneWindow，它代表应用程序窗口。PhoneWindow在运行中会间接
+//    触发很多事件，比如点击、菜单弹出、屏幕焦点变化等事件，这些事件需要转发给与
+//    PhoneWindow关联的Activity，转发操作通过Window.Callback 接口实现，Actvity实现了这
+//    个接口。在注释3处将当前Activity通过Window的setCallback方法传递给PhoneWindow。
+//    在注释4处为PhoneWindow设置WindowManager，在注释5处获取WindowManager并赋值
+//    给Activity的成员变量mWindowManager，这样在Activity中就可以通过getWindow Manager
+//    方法来获取WindowManager。注释l处的attachBaseContext方法在ContextThemeWrapper
+//    中实现，如下所示：
     final void attach(Context context, ActivityThread aThread,
             Instrumentation instr, IBinder token, int ident,
             Application application, Intent intent, ActivityInfo info,
@@ -6909,13 +6917,13 @@ public class Activity extends ContextThemeWrapper
             NonConfigurationInstances lastNonConfigurationInstances,
             Configuration config, String referrer, IVoiceInteractor voiceInteractor,
             Window window, ActivityConfigCallback activityConfigCallback) {
-        attachBaseContext(context);
+        attachBaseContext(context);//1
 
         mFragments.attachHost(null /*parent*/);
 
-        mWindow = new PhoneWindow(this, window, activityConfigCallback);
+        mWindow = new PhoneWindow(this, window, activityConfigCallback);//2
         mWindow.setWindowControllerCallback(this);
-        mWindow.setCallback(this);
+        mWindow.setCallback(this);//3
         mWindow.setOnWindowDismissedCallback(this);
         mWindow.getLayoutInflater().setPrivateFactory(this);
         if (info.softInputMode != WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED) {
@@ -6951,7 +6959,7 @@ public class Activity extends ContextThemeWrapper
         mWindow.setWindowManager(
                 (WindowManager)context.getSystemService(Context.WINDOW_SERVICE),
                 mToken, mComponent.flattenToString(),
-                (info.flags & ActivityInfo.FLAG_HARDWARE_ACCELERATED) != 0);
+                (info.flags & ActivityInfo.FLAG_HARDWARE_ACCELERATED) != 0);//4
         if (mParent != null) {
             mWindow.setContainer(mParent.getWindow());
         }

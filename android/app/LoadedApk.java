@@ -937,11 +937,18 @@ public final class LoadedApk {
         }
         return mResources;
     }
-
+//    在注释l处如果mApplication不为null则返回mApplication，这里假设是第一次启动
+//    应用程序，因此mApplication为null。在注释2 处通过Contextlmpl的createAppContext方法
+//    来创建Contextlmpl。注释3 处的代码用来创建Application，在Instrumentation的
+//    new Application方法中传入了ClassLoader类型的对象以及注释2 处创建的Contextlmpl。在
+//    注释4处将Application贼值给Contextlmpl的Context 类型的成员变量mOuterContext，这
+//    样Contextlmpl 中也包含了Application的引用。在注释5 处将Application赋值给LoadedApk
+//    的成员变量mApplication，这个mApplication是Application类型的对象，它用来代表
+//    Application Context，在ApplicationContext 的获取过程中我们会再次提到mApplication.
     public Application makeApplication(boolean forceDefaultAppClass,
             Instrumentation instrumentation) {
         if (mApplication != null) {
-            return mApplication;
+            return mApplication;//1
         }
 
         Trace.traceBegin(Trace.TRACE_TAG_ACTIVITY_MANAGER, "makeApplication");
@@ -961,10 +968,10 @@ public final class LoadedApk {
                 initializeJavaContextClassLoader();
                 Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
             }
-            ContextImpl appContext = ContextImpl.createAppContext(mActivityThread, this);
+            ContextImpl appContext = ContextImpl.createAppContext(mActivityThread, this);//2
             app = mActivityThread.mInstrumentation.newApplication(
-                    cl, appClass, appContext);
-            appContext.setOuterContext(app);
+                    cl, appClass, appContext);//3
+            appContext.setOuterContext(app);//4
         } catch (Exception e) {
             if (!mActivityThread.mInstrumentation.onException(app, e)) {
                 Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
@@ -974,7 +981,8 @@ public final class LoadedApk {
             }
         }
         mActivityThread.mAllApplications.add(app);
-        mApplication = app;
+        //这里要注意，loadApk会持有mApplication作为成员变量，context.getApplicationContext优先取的就是这个
+        mApplication = app;//5
 
         if (instrumentation != null) {
             try {

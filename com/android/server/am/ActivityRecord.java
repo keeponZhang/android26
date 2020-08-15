@@ -182,6 +182,15 @@ import java.util.Objects;
 /**
  * An entry in the history stack, representing an activity.
  */
+//ActivityRecord在本书的前几章经常会见到，它内部记录了Activity的所有信息，因此
+//它用来描述一个Activity，它是在启动Activity 时被创建的，具体是在ActivityStarter 的
+//startActivity方法中被创建的，具体可以查看4.1.2 节。ActivityRecord 的部分重要成员变量
+//如表6 - 1所示。
+//从表6-1可以看出ActivityRecord的作用，其内部存储了Activity的所有信息，包括
+//AMS 的引用、AndroidManifes节点信息、Activity状态、Activity资源信息和Activity进程
+//相关信息等，需要注意的是其中含有应ActivityRecord所在的TaskRecord，这就将
+//ActivityRecord和TaskRecord关联在一起，它们是Activity任务检模型的重要成员，我们接
+//着来查看TaskRecord
 final class ActivityRecord extends ConfigurationContainer implements AppWindowContainerListener {
     private static final String TAG = TAG_WITH_CLASS_NAME ? "ActivityRecord" : TAG_AM;
     private static final String TAG_CONFIGURATION = TAG + POSTFIX_CONFIGURATION;
@@ -204,14 +213,16 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
     private static final String ATTR_RESOLVEDTYPE = "resolved_type";
     private static final String ATTR_COMPONENTSPECIFIED = "component_specified";
     static final String ACTIVITY_ICON_SUFFIX = "_activity_icon_";
-
+//    AMS的引用
     final ActivityManagerService service; // owner
     final IApplicationToken.Stub appToken; // window manager token
     AppWindowContainerController mWindowContainerController;
+//    Activity中代码和AndroidManifest设置的节点信息，比如LaunchMode
     final ActivityInfo info; // all about me
     final ApplicationInfo appInfo; // information about activity's app
     final int launchedFromPid; // always the pid who started the activity.
     final int launchedFromUid; // always the uid who started the activity.
+    //启动Activity的包名
     final String launchedFromPackage; // always the package who started the activity.
     final int userId;          // Which user is this running for?
     final Intent intent;    // the original intent that generated us
@@ -220,6 +231,7 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
     final String resolvedType; // as per original caller;
     final String packageName; // the package implementing intent's component
     final String processName; // process where this component wants to run
+    //Activity希望归属的栈
     final String taskAffinity; // as per ActivityInfo.taskAffinity
     final boolean stateNotNeeded; // As per ActivityInfo.flags
     boolean fullscreen; // covers the full screen?
@@ -235,11 +247,14 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
 
     private CharSequence nonLocalizedLabel;  // the label information from the package mgr.
     private int labelRes;           // the label information from the package mgr.
+//  Activity的图标资源标识符
     private int icon;               // resource identifier of activity's icon.
     private int logo;               // resource identifier of activity's logo.
+//    Activity的主题资源标识符
     private int theme;              // resource identifier of activity's theme.
     private int realTheme;          // actual theme resource we will use, never 0.
     private int windowFlags;        // custom window flags for preview window.
+//    ActivityRecord所在的TaskRecord
     private TaskRecord task;        // the task this is in.
     private long createTime = System.currentTimeMillis();
     long displayStartTime;  // when we started launching this activity
@@ -266,7 +281,9 @@ final class ActivityRecord extends ConfigurationContainer implements AppWindowCo
     AppTimeTracker appTimeTracker; // set if we are tracking the time in this app/task/activity
     HashSet<ConnectionRecord> connections; // All ConnectionRecord we hold
     UriPermissionOwner uriPermissions; // current special URI access perms.
+    //ActivityRecord所在的应用程序进程
     ProcessRecord app;      // if non-null, hosting application
+// 当前Activity的状态
     ActivityState state;    // current state we are in
     Bundle  icicle;         // last saved activity state
     PersistableBundle persistentState; // last persistently saved activity state

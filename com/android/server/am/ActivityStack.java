@@ -141,6 +141,20 @@ import java.util.Set;
 /**
  * State and management of a single stack of activities.
  */
+//ActivityStack是一个管理类，用来管理系统所有Activity，其内部维护了Activity 的所
+//有状态、特殊状态的Activity以及和Activity相关的列表等数据。ActivityStack是由
+//ActivityStackSupervisor来进行管理的，而ActivityStackSupervisor在AMS的构造方法中被
+//创建，如下所示：
+
+//在ActivityStack中定义了一些特殊状态的Activity，如下所示：
+//ActivityRecord mPausingActivity ＝null ; //正在暂停的Activity
+//ActivityRecord mLastPausedActivity = null; //上一个已经暂停的Activity
+//ActivityRecord mLastNoHistoryActivity = null; //最近一次没有历史记录的Activity
+//ActivityRecord mResumedActivity = null ； //已经Resume 的Activity
+//ActivityRecord mLastStartedActivity =null ； //最近一次启动的Activity
+////传递给convertToTranslucent 方法的最上层的Activity
+//ActivityRecord mTranslucentActivityWaiting = null ;
+//这些特殊的状态都是ActivityRecord 类型的，ActivityRecord 用来记录一个Activity的所有信息。
 class ActivityStack<T extends StackWindowController> extends ConfigurationContainer
         implements StackWindowListener {
 
@@ -213,7 +227,7 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
         super.onParentChanged();
         mStackSupervisor.updateUIDsPresentOnDisplay();
     }
-
+//    在ActivityStack中通过枚举存储了Activty的所有的状态
     enum ActivityState {
         INITIALIZING,
         RESUMED,

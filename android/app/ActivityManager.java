@@ -4199,18 +4199,18 @@ public class ActivityManager {
     public static IActivityManager getService() {
         return IActivityManagerSingleton.get();
     }
-//    getService 方告调用了IActivityManagerSingleton 的get 方？去，我们接着往下看，
-//    IActivityManagerSingleton 是一个Singleton 类。在注释l 处得到名为“activity”的Service
-//    引用， 也就是!Binder 类型的AMS 的引用。接着在注释2 处将它转换成！ActivityManager
-//    类型的对象，这段代码采用的是AIDL, IActivityManager.java 类是由AIDL 工具在编译时
-//    自动生成的， IActivityManager.aidl 的文件路径为frameworks/base/core/java/android/app/
-//    IActivityManager.aidl 。要实现进程｜可通信，服务器端也就是AMS 只需要继承
-//    IActivityManager.Stub 类并实现相应的方也就可以了。注意Android 8.0 之前并没有采用
-//    AIDL ，而是采用了类似AIDL 的形式，用AMS 的代理对象ActivityManagerProxy 来与AMS
-//    进行进程间通信， Android 8.0 去除了ActivityManager忖ative 的内部类ActivityManagerProxy,
-//    代替它的是！ActivityManager ，它是AMS 在本地的代理。回到Instrumentation 类的
-//    execStartActivity 方法中，从上面得知execStartActivi ty 方陆最终调用的是AMS 的
-//    startActivity 方法。
+//    getService方法调用了IActivityManagerSingleton 的get方法，我们接着往下看，
+//    IActivityManagerSingleton是一个Singleton类。在注释l处得到名为“activity”的Service
+//    引用，也就是IBinder 类型的AMS 的引用（BinderProxy）。接着在注释2 将它转换成IActivityManager
+//    类型的对象，这段代码采用的是AIDL, IActivityManager.java类是由AIDL 工具在编译时
+//    自动生成的，IActivityManager.aidl 的文件路径为frameworks/base/core/java/android/app/
+//    IActivityManager.aidl。要实现进程间通信，服务器端也就是AMS只需要继承
+//    IActivityManager.Stub 类并实现相应的方也就可以了。注意Android 8.0之前并没有采用
+//    AIDL，而是采用了类似AIDL 的形式，用AMS 的代理对象ActivityManagerProxy来与AMS
+//    进行进程间通信，Android 8.0去除了ActivityManagerNative的内部类ActivityManagerProxy,
+//    代替它的是ActivityManager，它是AMS在本地的代理。回到Instrumentation类的
+//    execStartActivity方法中，从上面得知execStartActivity方法最终调用的是AMS的
+//    startActivity方法。
     private static final Singleton<IActivityManager> IActivityManagerSingleton =
             new Singleton<IActivityManager>() {
                 @Override

@@ -747,11 +747,11 @@ public final class ActivityThread {
 
         // we use token to identify this activity without having to send the
         // activity itself back to the activity manager. (matters more with ipc)
-//        scheduleLaunchActivity 方法将启动Activity 的参数封装成ActivityClientRecord,
-//        sendMessage 方怯向H 类发送类型为LAUNCH一ACTIVITY 的消息，并将Activ町ClientRecord
-//        传递过去， sendMessage 方陆有多个重载方告，最终调用的sendMessage 方法如下所示：
-//        这里mH 指的是H ，它是ActivityThread 的内部类并继承自Handler ，是应用程序进程
-//        中主线程的消息管理类。因为Applicatio日bread 是一个Binder ，它的调用逻辑运行在Binder
+//        scheduleLaunchActivity方法将启动Activity的参数封装成ActivityClientRecord,
+//        sendMessage方法向H类发送类型为LAUNCH_ACTIVITY的消息并将ActivtyClientRecord
+//        传递过去，sendMessage方法有多个重载方法，最终调用的sendMessage方法如下所示：
+//        这里mH指的是H，它是ActivityThread的内部类并继承自Handler，是应用程序进程
+//        中主线程的消息管理类。因为Applicatio日bread 是一个Binder，它的调用逻辑运行在Binder
 //        线程池中，所以这里需要用H 将代码的逻辑切换到主线程中
         @Override
         public final void scheduleLaunchActivity(Intent intent, IBinder token, int ident,
@@ -843,7 +843,8 @@ public final class ActivityThread {
 
             sendMessage(H.DESTROY_BACKUP_AGENT, d);
         }
-
+//        Service的Context创建过程与Activity的Context创建过程类似，是在Service的启动
+//        过程中被创建的。
         public final void scheduleCreateService(IBinder token,
                 ServiceInfo info, CompatibilityInfo compatInfo, int processState) {
             updateProcessState(processState, false);
@@ -1591,11 +1592,11 @@ public final class ActivityThread {
             }
             return Integer.toString(code);
         }
-//        查看H 的handleMessage 方怯中对LAUNCH_ACTIVITY 的处理，在注释l 处将传过
-//        来的msg 的成员变量obj 转换为ActivityClientRecord 。在注释2 处通过
-//        getPackagelnfoNoCheck 方法获得LoadedApk 类型的对象并赋值给ActivityClientRecord 的
-//        成员变量packagelnfo。应用程序进程要启动Activity 时需要将该Activity 所属的APK加载进
-//        来，而LoadedApk 就是用来描述己加载的APK 文件的.
+//        查看H的handleMessage方法中对LAUNCH_ACTIVITY的处理，在注释l处将传过
+//        来的msg的成员变量obj 转换为ActivityClientRecord。在注释2处通过
+//        getPackagelnfoNoCheck方法获得LoadedApk类型的对象并赋值给ActivityClientRecord的
+//        成员变量packagelnfo。应用程序进程要启动Activity时需要将该Activity 所属的APK加载进
+//        来，而LoadedApk就是用来描述己加载的APK文件的.
         public void handleMessage(Message msg) {
             if (DEBUG_MESSAGES) Slog.v(TAG, ">>> handling: " + codeToString(msg.what));
             switch (msg.what) {
@@ -2196,6 +2197,7 @@ public final class ActivityThread {
         return mLooper;
     }
 
+    //context.getApplication也可能会调用到这里拿Application
     public Application getApplication() {
         return mInitialApplication;
     }
@@ -2697,14 +2699,14 @@ public final class ActivityThread {
         sendMessage(H.CLEAN_UP_CONTEXT, cci);
     }
 
-    //注释l 处用来获取Activity Info ，用于存储代码以及AndroidManifes 设置的Activity 和
-    //Receiver 节点信息，比如Activity 的theme 和launchMode 。在注释2 处获取APK 文件的描－
-    //述类LoadedApk 。在注释3 处获取要启动的Activity 的ComponentName 类， 在
-    //ComponentName 类中保存了该Activity 的包名和类名。注释4 处用来创建要启动Activity
-    //的上下文环境。注释5 处根据ComponentName 中存储的Activity 类名， 用类加载器来创建
-    //该Activity 的实例。注释6 处用来创建Application, makeApplication 方法内部会调用
-    //Application 的on Create 方法。注释7 处调用Activity 的attach 方怯初始化Activity，在attach
-    //方法中会创建Window对象（Phone Window ）并与Activity自身进行关联。在注释8处调用
+    //注释l处用来获取ActivityInfo，用于存储代码以及AndroidManifes设置的Activity和
+    //Receiver节点信息，比如Activity的theme和launchMode。在注释2处获取APK文件的描－
+    //述类LoadedApk。在注释3 处获取要启动的Activity的ComponentName类，在
+    //ComponentName类中保存了该Activity的包名和类名。注释4处用来创建要启动Activity
+    //的上下文环境。注释5处根据ComponentName中存储的Activity类名，用类加载器来创建
+    //该Activity 的实例。注释6处用来创建Application,makeApplication方法内部会调用
+    //Application 的onCreate方法。注释7处调用Activity 的attach方法初始化Activity，在attach
+    //方法中会创建Window对象（PhoneWindow）并与Activity自身进行关联。在注释8处调用
     //Instrumentation的callActivityOnCreate方法来启动Activity，如下所示：
     private Activity performLaunchActivity(ActivityClientRecord r, Intent customIntent) {
         // System.out.println("##### [" + System.currentTimeMillis() + "] ActivityThread.performLaunchActivity(" + r + ")");
@@ -2727,11 +2729,11 @@ public final class ActivityThread {
             component = new ComponentName(r.activityInfo.packageName,
                     r.activityInfo.targetActivity);
         }
-      //创建要启动Activity 的上下文环境
+      //创建要启动Activity的上下文环境
         ContextImpl appContext = createBaseContextForActivity(r);//4
         Activity activity = null;
         try {
-            //用类加载器来创建该Activity 的实例
+            //用类加载器来创建该Activity的实例
             java.lang.ClassLoader cl = appContext.getClassLoader();
             activity = mInstrumentation.newActivity(
                     cl, component.getClassName(), r.intent);//5
@@ -2776,7 +2778,7 @@ public final class ActivityThread {
                     r.mPendingRemoveWindowManager = null;
                 }
                 appContext.setOuterContext(activity);
-                //初始化Activity
+                //初始化Activity,调用attach方法，注意这里appContext是ContextImpl
                 activity.attach(appContext, this, getInstrumentation(), r.token,
                         r.ident, app, r.intent, r.activityInfo, title, r.parent,
                         r.embeddedID, r.lastNonConfigurationInstances, config,
@@ -2899,9 +2901,9 @@ public final class ActivityThread {
         }
         return appContext;
     }
-//    注释l 处的performLaunchActivity 方陆用来启动Activity,注释2 处的代码用来将
-//    Activity 的状态设置为Resume。如果该Activity 为null 则会通知AMS 停止启动Activity 。
-//    下面来查看performLaunchActivity 方法做了什么：
+//    注释l处的performLaunchActivity 方法用来启动Activity,注释2处的代码用来将
+//    Activity 的状态设置为Resume。如果该Activity 为null则会通知AMS停止启动Activity。
+//    下面来查看performLaunchActivity方法做了什么：
     private void handleLaunchActivity(ActivityClientRecord r, Intent customIntent, String reason) {
         // If we are getting ready to gc after going to the background, well
         // we are back active so skip it.
@@ -3408,18 +3410,18 @@ public final class ActivityThread {
         }
     }
 
-//    在注释l处获取要启动Service的应用程序的LoadedApk,LoadedApk是一个APK 文
-//    件的描述类。在注释2 处通过i周用LoadedApk 的getClassLoader 方能来获取类加载器。接
-//    着在注释3 处根据CreateServiceData 对象中存储的Service 信息，创建Service 实例。在注
-//    释4 处创建Service 的上下文环境Contextlmpl 对象。在注释5 处通过Service 的attach 方法
-//    来初始化Service。在注释6 处调用Service 的onCreate 方泣，这样Service 就启动了。在注
-//    释7 处将启动的Service加入到ActivityThread 的成员变量mServices中，其中mServices 是
-//    ArrayMap 类型。
+//    在注释l处获取要启动Service的应用程序的LoadedApk,LoadedApk是一个APK文
+//    件的描述类。在注释2处通过调用LoadedApk的getClassLoader方法来获取类加载器。接
+//    着在注释3处根据CreateServiceData对象中存储的Service信息，创建Service实例。在注
+//    释4处创建Service的上下文环境Contextlmpl对象。在注释5处通过Service的attach方法
+//    来初始化Service。在注释6 处调用Service的onCreate方法，这样Service就启动了。在注
+//    释7处将启动的Service加入到ActivityThread的成员变量mServices中，其中mServices 是
+//    ArrayMap类型。
     private void handleCreateService(CreateServiceData data) {
         // If we are getting ready to gc after going to the background, well
         // we are back active so skip it.
         unscheduleGcIdler();
-//获取要启动Service 的应用程序的LoadedApk
+//获取要启动Service的应用程序的LoadedApk
         LoadedApk packageInfo = getPackageInfoNoCheck(
                 data.info.applicationInfo, data.compatInfo);//1
         Service service = null;
@@ -3438,12 +3440,12 @@ public final class ActivityThread {
 
         try {
             if (localLOGV) Slog.v(TAG, "Creating service " + data.info.name);
-            //创建Service 的上下文环境Contextimpl 对象
+            //创建Service的上下文环境ContextImpl对象
             ContextImpl context = ContextImpl.createAppContext(this, packageInfo);//4
             context.setOuterContext(service);
 
             Application app = packageInfo.makeApplication(false, mInstrumentation);
-            //初始化Service
+            //初始化Service，传入ContextImpl
             service.attach(context, this, data.info.name, data.token, app,
                     ActivityManager.getService());//5
             service.onCreate();//6
@@ -5815,6 +5817,7 @@ public final class ActivityThread {
             // If the app is being launched for full backup or restore, bring it up in
             // a restricted environment with the base application class.
             Application app = data.info.makeApplication(data.restrictedBackupMode, null);
+            //这里的mInitialApplication其实是LoadApk里面的application
             mInitialApplication = app;
 
             // don't bring up providers in restricted mode; they may depend on the

@@ -113,14 +113,16 @@ public class SystemServiceManager {
             Trace.traceEnd(Trace.TRACE_TAG_SYSTEM_SERVER);
         }
     }
-
+//    传入的SystemService类型的service对象的值为ActivityManagerService.Lifecycle.class。
+//    在注释l处将service对象添加到ArrayList类型的mServices中来完成注册。在注释2处调
+//    用service的onStart方法来启动service对象，这个service对象具体指的是什么呢？我们接 着往下看，
     public void startService(@NonNull final SystemService service) {
         // Register it.
-        mServices.add(service);
+        mServices.add(service);//1
         // Start it.
         long time = System.currentTimeMillis();
         try {
-            service.onStart();
+            service.onStart();//2
         } catch (RuntimeException ex) {
             throw new RuntimeException("Failed to start service " + service.getClass().getName()
                     + ": onStart threw an exception", ex);

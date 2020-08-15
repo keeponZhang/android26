@@ -1095,6 +1095,9 @@ public class Instrumentation {
      * 
      * @return The newly instantiated Application object.
      */
+//    Instrumentation中有两个newApplication重载方法，最终会i周用上面这个重载方法。注
+//    释I处通过反射来创建Application，井调用了Application的attach方法，将ContextImpl
+//    传进去，最后返回该Application
     static public Application newApplication(Class<?> clazz, Context context)
             throws InstantiationException, IllegalAccessException, 
             ClassNotFoundException {
@@ -1574,10 +1577,10 @@ public class Instrumentation {
      *
      * {@hide}
      */
-    //首先调用用ActivityManager 的getService 方法来获取AMS 的代理对象，接着调用它的
-    //sta11Activity 方法。这里与Android 8.0 之前代码的逻辑有些不同， Android 8.0 之前是通过
-    //ActivityManagerNative 的getDefault 未获取AMS 的代理对象的，现在这个逻辑封装到了
-    //Activity Manager 中而不是ActivityManagerNative 中
+    //首先调用用ActivityManager的getService方法来获取AMS的代理对象，接着调用它的
+    //startActivity方法。这里与Android 8.0之前代码的逻辑有些不同，Android 8.0之前是通过
+    //ActivityManagerNative的getDefault未获取AMS 的代理对象的，现在这个逻辑封装到了
+    //ActivityManager中而不是ActivityManagerNative中
     public ActivityResult execStartActivity(
             Context who, IBinder contextThread, IBinder token, Activity target,
             Intent intent, int requestCode, Bundle options) {
