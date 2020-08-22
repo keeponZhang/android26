@@ -274,7 +274,22 @@ public final class WindowManagerGlobal {
 
         return null;
     }
-
+    在介绍addView方法前我们首先要了解WindowManagerGlobal中维护的和Window操
+    作相关的3个列表，在窗口的添加、更新和删除过程中都会涉及这3个列表，它们分别是
+    View 列表(ArrayList<View> mViews)、布局参数列表（Array List<WindowManagerLayoutParams> mParams)
+    和ViewRootlmpl 列表(ArrayList<ViewRootlmpl> mRoots)。了解 了这3个列表后，我们接着分析addView方法，
+    首先会对参数view、params和display进行检查。在注释l处，如果当前窗口要作为子窗口，就会根据父窗口对子窗口的
+    WindowManager.LayoutParams 类型的wparams对象进行相应调整。在注释3处将添加的
+    View保存到View列表中。在注释5 处将窗口的参数保存到布局参数列表中。在注释2处
+    创建了ViewRootlmp并赋值给root，紧接着在注释4处将root存入到ViewRootlmpl列表中。
+    在注释6处将窗口和窗口的参数通过setView方法设置到ViewRootlmpl中，可见我们添加
+    窗口这一操作是通过ViewRootlmpl来进行的。ViewRootlmpl身负了很多职责，主要有以
+    下几点：
+           .View树的根并管理View树。
+           .触发View 的测量、布局和绘制。
+           .输入事件的中转站。
+           .管理Surface。
+           .负责与WMS进行进程间通信。
     public void addView(View view, ViewGroup.LayoutParams params,
             Display display, Window parentWindow) {
         if (view == null) {
@@ -289,7 +304,7 @@ public final class WindowManagerGlobal {
 
         final WindowManager.LayoutParams wparams = (WindowManager.LayoutParams) params;
         if (parentWindow != null) {
-            parentWindow.adjustLayoutParamsForSubWindow(wparams);
+            parentWindow.adjustLayoutParamsForSubWindow(wparams);//1
         } else {
             // If there's no parent, then hardware acceleration for this view is
             // set from the application's hardware acceleration setting.
@@ -343,17 +358,18 @@ public final class WindowManagerGlobal {
                 }
             }
 
-            root = new ViewRootImpl(view.getContext(), display);
+            root = new ViewRootImpl(view.getContext(), display);//2
 
             view.setLayoutParams(wparams);
 
-            mViews.add(view);
-            mRoots.add(root);
-            mParams.add(wparams);
+            mViews.add(view);//3
+            mRoots.add(root);//4
+            //mParams有个重要的参数token
+            mParams.add(wparams);//5
 
             // do this last because it fires off messages to start doing things
             try {
-                root.setView(view, wparams, panelParentView);
+                root.setView(view, wparams, panelParentView);//6
             } catch (RuntimeException e) {
                 // BadTokenException or InvalidDisplayException, clean up.
                 if (index >= 0) {

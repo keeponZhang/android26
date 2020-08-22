@@ -83,6 +83,11 @@ public class StatusBarWindowManager implements RemoteInputController.Callback, D
      * @param statusBarView The view to add.
      * @param barHeight The height of the status bar in collapsed state.
      */
+//    首先通过创建LayoutParams来配置StatusBar视图的属性，包括Width、Height、Type、
+//    Flag、Gravity、SoftInputMode等。关键在注释l处，设置了TYPE_STATUS_BAR，表示
+//    StatusBar视图的窗口类型是状态栏。在注释2处调用了WindowManager的addView方法，
+//    addView方法定义在WindowManager的父类接口ViewManager中，而addView方法则是在
+//    WindowManagerImpI中实现的，如下所示：
     public void add(View statusBarView, int barHeight) {
 
         // Now that the status bar window encompasses the sliding panel and its
@@ -91,7 +96,7 @@ public class StatusBarWindowManager implements RemoteInputController.Callback, D
         mLp = new WindowManager.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 barHeight,
-                WindowManager.LayoutParams.TYPE_STATUS_BAR,
+                WindowManager.LayoutParams.TYPE_STATUS_BAR,//1
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                         | WindowManager.LayoutParams.FLAG_TOUCHABLE_WHEN_WAKING
                         | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH
@@ -106,7 +111,7 @@ public class StatusBarWindowManager implements RemoteInputController.Callback, D
         mLp.packageName = mContext.getPackageName();
         mStatusBarView = statusBarView;
         mBarHeight = barHeight;
-        mWindowManager.addView(mStatusBarView, mLp);
+        mWindowManager.addView(mStatusBarView, mLp);//2
         mLpChanged = new WindowManager.LayoutParams();
         mLpChanged.copyFrom(mLp);
     }

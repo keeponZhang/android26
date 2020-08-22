@@ -253,7 +253,7 @@ class ContextImpl extends Context {
     public Looper getMainLooper() {
         return mMainThread.getLooper();
     }
-//    如果LoadedApk 类型的mPackagelnfo不为null，则调用LoadedApk的getApplication
+//    如果LoadedApk类型的mPackagelnfo不为null，则调用LoadedApk的getApplication
 //    方法，否则调用AvtivityThread的getApplication方法。由于应用程序这时已经启动，因此
 //    LoadedApk不会为null，则会调用LoadedApk的getApplication方法，如下所示：
     @Override
@@ -1669,7 +1669,7 @@ class ContextImpl extends Context {
             throw e.rethrowFromSystemServer();
         }
     }
-
+    在getSystemService方法中会调用SystemServiceRegistry的getSystemServiceName 方法：
     @Override
     public Object getSystemService(String name) {
         return SystemServiceRegistry.getSystemService(this, name);

@@ -629,6 +629,12 @@ public final class ViewRootImpl implements ViewParent,
     /**
      * We have one child
      */
+//    在setView方法中有很多逻辑，这里只截取了一小部分，主要就是调用了
+//    mWindowSession的addToDisplay方法，mWindowSession是IWindowSession类型的，它是
+//    一个Binder对象，用于进行进程间通信，IWindowSession是Client端的代理，它的Server
+//    端的实现为Session，此前的代码逻辑都是运行在本地进程的，而Session的addToDisplay
+//    方法则运行在WMS所在的进程（SystemServer进程中，如图7”4 所示
+    //mWindowSession.addToDisplay 732
     public void setView(View view, WindowManager.LayoutParams attrs, View panelParentView) {
         synchronized (this) {
             if (mView == null) {
@@ -723,6 +729,7 @@ public final class ViewRootImpl implements ViewParent,
                     mOrigWindowType = mWindowAttributes.type;
                     mAttachInfo.mRecomputeGlobalAttributes = true;
                     collectViewAttributes();
+                    //这里是一个代理对象
                     res = mWindowSession.addToDisplay(mWindow, mSeq, mWindowAttributes,
                             getHostVisibility(), mDisplay.getDisplayId(),
                             mAttachInfo.mContentInsets, mAttachInfo.mStableInsets,

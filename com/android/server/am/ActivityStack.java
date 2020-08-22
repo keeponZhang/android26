@@ -155,6 +155,22 @@ import java.util.Set;
 ////传递给convertToTranslucent 方法的最上层的Activity
 //ActivityRecord mTranslucentActivityWaiting = null ;
 //这些特殊的状态都是ActivityRecord 类型的，ActivityRecord 用来记录一个Activity的所有信息。
+
+
+//在ActivityStack 中维护了很多AηayList，这些ArrayList中的元素类型主要有ActivityRecord 和TaskRecord， 如表6-3 所示。
+//mTaskHistory TaskRecord 所有没有被销毁的Activity 任务校
+//mLRUActivities  ActivityRecord  正在运行的Activity， 列表中的第一个条目是最近最少使用的Activity
+//mNoAnimActivities  ActivityRecord  不考虑转换动画的Activity
+//mValidateAppTokens  TaskGroup  用于与窗口管理器验证应用令牌
+
+
+//ActivityRecord是用来记录一个Activity的所有信息，TaskRecord中包含了一个或多个
+//ActivityRecord ,TaskRecord 用来表示Activity 的任务栈，用来管理栈中的ActivityRecord,
+//ActivityStack又包含了一个或多个TaskRecord，它是TaskRecord 的管理者。Activity栈管理
+//就是建立在Activity任务栈模型之上的，有了栈管理，我们可以对应用程序进行操作，应
+//用可以复用自身应用中以及其他应用的Activity，节省了资源。比如我们使用一款社交应用，
+//这个应用的联系人详情界面提供了联系人的邮箱，当我们点击邮箱时会跳到发送邮件的界 面，如图6 -5 所示。
+
 class ActivityStack<T extends StackWindowController> extends ConfigurationContainer
         implements StackWindowListener {
 
@@ -938,6 +954,11 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
      * Returns the top activity in any existing task matching the given Intent in the input result.
      * Returns null if no such task is found.
      */
+//    这个方法的逻辑比较复杂，这里截取了和taskAffinity相关的部分。在注释l处遍历
+//    mTaskHistory列表，列表的元素为TaskRecord, 它用于存储没有被销毁的栈。在注释2处
+//    得到某一个栈的信息。在注释3 处将栈的rootAffinity（初始的taskAffinity）和目标Activity
+//    的taskAffinity做对比，如果相同，则将FindTaskResult的matchedByRootAffinity属性设置
+//    为true，说明找到了匹配的栈。
     void findTaskLocked(ActivityRecord target, FindTaskResult result) {
         Intent intent = target.intent;
         ActivityInfo info = target.info;
@@ -951,8 +972,8 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
         Uri documentData = isDocument ? intent.getData() : null;
 
         if (DEBUG_TASKS) Slog.d(TAG_TASKS, "Looking for task of " + target + " in " + this);
-        for (int taskNdx = mTaskHistory.size() - 1; taskNdx >= 0; --taskNdx) {
-            final TaskRecord task = mTaskHistory.get(taskNdx);
+        for (int taskNdx = mTaskHistory.size() - 1; taskNdx >= 0; --taskNdx) {//1
+            final TaskRecord task = mTaskHistory.get(taskNdx);//2
             if (task.voiceSession != null) {
                 // We never match voice sessions; those always run independently.
                 if (DEBUG_TASKS) Slog.d(TAG_TASKS, "Skipping " + task + ": voice session");
@@ -1016,7 +1037,7 @@ class ActivityStack<T extends StackWindowController> extends ConfigurationContai
                 break;
             } else if (!isDocument && !taskIsDocument
                     && result.r == null && task.rootAffinity != null) {
-                if (task.rootAffinity.equals(target.taskAffinity)) {
+                if (task.rootAffinity.equals(target.taskAffinity)) {//3
                     if (DEBUG_TASKS) Slog.d(TAG_TASKS, "Found matching affinity candidate!");
                     // It is possible for multiple tasks to have the same root affinity especially
                     // if they are in separate stacks. We save off this candidate, but keep looking

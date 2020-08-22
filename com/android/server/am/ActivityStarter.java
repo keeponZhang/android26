@@ -252,8 +252,8 @@ class ActivityStarter {
         mInterceptor = new ActivityStartInterceptor(mService, mSupervisor);
         mUsingVr2dDisplay = false;
     }
-//    在注释l 处判断启动的理由不为空，如果为空则抛出IllegalArgumentException 异常。
-//    紧接着又调用了startActivity 方法(287)
+//    在注释l处判断启动的理由不为空，如果为空则抛出IllegalArgumentException异常。
+//    紧接着又调用了startActivity方法(287)
     int startActivityLocked(IApplicationThread caller, Intent intent, Intent ephemeralIntent,
             String resolvedType, ActivityInfo aInfo, ResolveInfo rInfo,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
@@ -282,14 +282,14 @@ class ActivityStarter {
         }
         return mLastStartActivityResult;
     }
-//    ActivityStarter 的startActivity 方怯逻辑比较多，这里列出部分我们需要关心的代码。
-//    在注释l 处判断IApplicationThread 类型的caller 是否为null ，这个caller 是方法i周用一路传
-//    过来的，指向的是Launcher 所在的应用程序进程的ApplicationThread 对象，在注释2 处调
-//    用AMS 的getRecordFor AppLocked 方怯得到的是代表Launcher 进程的callerApp 对象，它
-//    是ProcessRecord 类型的， ProcessRecord 用于描述一个应用程序进程。同样地， ActivityRecord
-//    用于描述一个Activ町，用来记录一个Activity 的所有信息。接下来创建ActivityRecord,
-//    用于描述将要启动的Activity ，并在注释3 处将创建的ActivityRecord 赋值给ActivityRecord[]
-//    类型的outActivity ，这个outActivity 会作为注释4 处的startActivity 方怯的参数传递下去。
+//    ActivityStarter的startActivity方法逻辑比较多，这里列出部分我们需要关心的代码。
+//    在注释l处判断IApplicationThread类型的caller是否为null，这个caller 是方法调用一路传
+//    过来的，指向的是Launcher所在的应用程序进程的ApplicationThread对象，在注释2处调
+//    用AMS的getRecordForAppLocked方法得到的是代表Launcher进程的callerApp对象，它
+//    是ProcessRecord类型的，ProcessRecord用于描述一个应用程序进程。同样地，ActivityRecord
+//    用于描述一个Activity，用来记录一个Activity的所有信息。接下来创建ActivityRecord,
+//    用于描述将要启动的Activity，并在注释3处将创建的ActivityRecord赋值给ActivityRecord[]
+//    类型的outActivity，这个outActivity会作为注释4处的startActivity方法的参数传递下去。
     /** DO NOT call this method directly. Use {@link #startActivityLocked} instead. */
     private int startActivity(IApplicationThread caller, Intent intent, Intent ephemeralIntent,
             String resolvedType, ActivityInfo aInfo, ResolveInfo rInfo,
@@ -305,9 +305,9 @@ class ActivityStarter {
                 = options != null ? options.popAppVerificationBundle() : null;
 //        ProcessRecord 用于描述一个应用程序进程
         ProcessRecord callerApp = null;
-        //得到Launcher 进程
+        //得到Launcher进程
         if (caller != null) {//1
-            //得到Launcher 进程
+            //得到Launcher进程
             callerApp = mService.getRecordForAppLocked(caller);//2
             if (callerApp != null) {
                 //／／获取Launcher 进程的pid 和uid
@@ -535,7 +535,7 @@ class ActivityStarter {
             aInfo = mSupervisor.resolveActivity(intent, rInfo, startFlags, null /*profilerInfo*/);
         }
 
-        //创建即将要启动的Activity 的描述类ActivityRecord
+        //创建即将要启动的Activity的描述类ActivityRecord
         ActivityRecord r = new ActivityRecord(mService, callerApp, callingPid, callingUid,
                 callingPackage, intent, resolvedType, aInfo, mService.getGlobalConfiguration(),
                 resultRecord, resultWho, requestCode, componentSpecified, voiceSession != null,
@@ -1009,7 +1009,7 @@ class ActivityStarter {
             mPowerHintSent = false;
         }
     }
-//    startActivity 方怯紧接着调用了startActivityUnchecked 方怯：
+//    startActivity方法紧接着调用了startActivityUnchecked 方怯：
     private int startActivity(final ActivityRecord r, ActivityRecord sourceRecord,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
             int startFlags, boolean doResume, ActivityOptions options, TaskRecord inTask,
@@ -1037,27 +1037,30 @@ class ActivityStarter {
     }
 
     // Note: This method should only be called from {@link startActivity}.
-    //
-//    startActivityUnchecked 方战主要处理与枝管理相关的逻辑。在标注①处(Launcher.startSafety)我们得知，
-//    启动根Activity 时会将Intent 的Flag 设置为FLAG ACTIVITY NEW TASK ，这样注释l(看1202mStartActivity.resultTo = null)
-//    处的条件判断就会楠a足， 接着执行注释2 处的setTaskFromReuseOrCreateNewTask 方怯，
-//    其内部会创建一个新的TaskRecord ，用来描述一个Activity 任务枝，也就是说
-//    setTaskFromReuseOrCreateNewTask 方怯内部会创建一个新的Activ句任务挠。Activity 任
-//    务钱其实是一个假想的模型，并不真实存在，关于Activity 任务枝会在第6 章进行介绍。
-//    在注释3 处会调用ActivityStackSupervisor 的resumeFocusedStackTopActivityLocked 方法
+//    startActivityUnchecked方法主要处理与栈管理相关的逻辑。在标注①处(Launcher.startSafety)我们得知，
+//    启动根Activity时会将Intent的Flag设置为FLAG_ACTIVITY_NEW_TASK，这样注释l(看1202mStartActivity.resultTo = null)
+//    处的条件判断就会满足，接着执行注释2处的setTaskFromReuseOrCreateNewTask方法，
+//    其内部会创建一个新的TaskRecord，用来描述一个Activity任务栈，也就是说
+//    setTaskFromReuseOrCreateNewTask方法内部会创建一个新的Activ句任务挠。Activity任
+//    务钱其实是一个假想的模型，并不真实存在，关于Activity任务栈会在第6章进行介绍。
+//    在注释3处会调用ActivityStackSupervisor的resumeFocusedStackTopActivityLocked方法
     private int startActivityUnchecked(final ActivityRecord r, ActivityRecord sourceRecord,
             IVoiceInteractionSession voiceSession, IVoiceInteractor voiceInteractor,
             int startFlags, boolean doResume, ActivityOptions options, TaskRecord inTask,
             ActivityRecord[] outActivity) {
-
+//        在注释l处用于初始化启动Activity的各种配置，在初始化前会重置各种配置再进行
+//        配置，这些配置包括ActivityRecord、Intent、TaskRecord和LaunchFlags (Activity启动的
+//        FLAG）等。注释2处的computeLaunchingTaskFlags方法用于计算出Activity启动的FLAG,
+//        并将计算的值赋值给mLaunchFlags。在注释3 处将mLaunchFlags设置给Intent，达到设定
+//        Activity的启动方式的目的，
         setInitialState(r, options, inTask, doResume, startFlags, sourceRecord, voiceSession,
-                voiceInteractor);
+                voiceInteractor);//注释1
 
-        computeLaunchingTaskFlags();
+        computeLaunchingTaskFlags();//注释2
 
         computeSourceStack();
 
-        mIntent.setFlags(mLaunchFlags);
+        mIntent.setFlags(mLaunchFlags);//注释3
 
         ActivityRecord reusedActivity = getReusableIntentActivity();
 
@@ -1465,22 +1468,29 @@ class ActivityStarter {
                 mAddingToTask = true;
             }
         }
-
-        if (mInTask == null) {
-            if (mSourceRecord == null) {
+//        计算启动的FLAG的逻辑比较复杂，这里只截取了一小部分，当注释1处的TaskRecord
+//        类型的mlnTask为null 时，说明Activity 要加入的栈不存在，因此，这一小段代码主要解
+//        决的问题就是Activity 要加入的栈不存在时如何计算出启动的FLAG。在注释2 处，
+//        ActivityRecord类型的mSourceRecord 用于描述“初始Activity”，什么是“初始Activity ”
+//        呢？ 比如ActivityA 启动了ActivityB, Activity A就是初始Activity。同时满足注释2和注释
+//        3的条件则需要创建一个新栈。在注释4处，如果“初始Activity”所在的栈只允许有一个
+//        Activity实例，则也需要创建一个新栈。在注释5处，如果Launc Mode设置了singleTask
+//        或singleInstance，则也要创建一个新栈。
+        if (mInTask == null) {//1
+            if (mSourceRecord == null) {//2
                 // This activity is not being started from another...  in this
                 // case we -always- start a new task.
-                if ((mLaunchFlags & FLAG_ACTIVITY_NEW_TASK) == 0 && mInTask == null) {
+                if ((mLaunchFlags & FLAG_ACTIVITY_NEW_TASK) == 0 && mInTask == null) {//3
                     Slog.w(TAG, "startActivity called from non-Activity context; forcing " +
                             "Intent.FLAG_ACTIVITY_NEW_TASK for: " + mIntent);
                     mLaunchFlags |= FLAG_ACTIVITY_NEW_TASK;
                 }
-            } else if (mSourceRecord.launchMode == LAUNCH_SINGLE_INSTANCE) {
+            } else if (mSourceRecord.launchMode == LAUNCH_SINGLE_INSTANCE) {//4
                 // The original activity who is starting us is running as a single
                 // instance...  this new activity it is starting must go on its
                 // own task.
                 mLaunchFlags |= FLAG_ACTIVITY_NEW_TASK;
-            } else if (mLaunchSingleInstance || mLaunchSingleTask) {
+            } else if (mLaunchSingleInstance || mLaunchSingleTask) {//5
                 // The activity being started is a single instance...  it always
                 // gets launched into its own task.
                 mLaunchFlags |= FLAG_ACTIVITY_NEW_TASK;

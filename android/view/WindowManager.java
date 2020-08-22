@@ -53,7 +53,22 @@ import java.util.Objects;
  * </p>
  */
 @SystemService(Context.WINDOW_SERVICE)
-public interface WindowManager extends ViewManager {
+//getDefaultDisplay 方怯能够得知这个WindowManager实例将Window添加到哪个屏幕
+//上了，换句话说，就是得到WindowManager所管理的屏幕(Display)。removeViewImmediate
+//方法则规定在这个方法返回前要立即执行View.onDetachedFromWindow()，来完成传入的
+//View相关的销毁工作。
+
+
+//当一个进程向WMS申请一个窗口时，WMS会为窗口确定显示次序。为了方便窗口显
+//示次序的管理，手机屏幕可以虚拟地用X、Y、Z 轴来表示，其中Z轴垂直于屏幕，从屏幕
+//内指向屏幕外，这样确定窗口显示次序也就是确定窗口在Z轴上的次序，这个次序称为
+//Z- Oder。Type 值是Z-Oder排序的依据，我们知道应用程序窗口的Type值范围为l～99,
+//子窗口1000～1999，系统窗口2000～2999，在一般情况下，Type值越大则Z-Oder排序越
+//靠前，就越靠近用户。当然窗口显示次序的逻辑不会这么简单，情况会比较多，举个常见
+//的情况：当多个窗口的Type值都是TYPE_APPLICATION，这时WMS会结合各种情况给
+//出最终的Z-Oder，这个逻辑不在本书的讨论范围，这里我们只需要知道窗口显示次序的基
+//本规则就可以了。
+public interface WindowManager extends ViewManager {//实现者为WindowManagerImpl
 
     /** @hide */
     int DOCKED_INVALID = -1;
@@ -169,6 +184,12 @@ public interface WindowManager extends ViewManager {
      */
     public void requestAppKeyboardShortcuts(final KeyboardShortcutsReceiver receiver, int deviceId);
 
+//    SOFT INPUT STATE UNSPECIFIED           没有指定状态， 系统会选择一个合适的状态或依赖于主题的设置
+//    SOFT INPUT STATE UNCHANGED              不会改变软键盘状态
+//    SOFT INPUT STATE HIDDEN                当用户进入该窗口时，软键盘默认隐藏
+//    SOFT INPUT STATE ALWAYS HIDDEN         当窗口获取焦点时，软键盘总是被隐藏
+//    SOFT INPUT STATE ADJUST RESIZE          当软键盘弹出时，窗口会调整大小
+//    SOFT INPUT STATE ADJUST PAN            当软键盘弹出时， 窗口不需要调整大小， 要确保输入焦点是可见的
     public static class LayoutParams extends ViewGroup.LayoutParams implements Parcelable {
         /**
          * X position for this window.  With the default gravity it is ignored.
@@ -353,6 +374,7 @@ public interface WindowManager extends ViewManager {
          * appear on top of it.
          * In multiuser systems shows only on the owning user's window.
          */
+        //窗口的基础值， 其他的窗口值要大于这个值
         public static final int TYPE_BASE_APPLICATION   = 1;
 
         /**
@@ -360,6 +382,7 @@ public interface WindowManager extends ViewManager {
          * an Activity token identifying who the window belongs to.
          * In multiuser systems shows only on the owning user's window.
          */
+        //普通的应用程序窗口类型
         public static final int TYPE_APPLICATION        = 2;
 
         /**
@@ -369,6 +392,7 @@ public interface WindowManager extends ViewManager {
          * application can show its own windows.
          * In multiuser systems shows on all users' windows.
          */
+        //应用程序启动窗口类型， 用于系统在应用程序窗口启动前显示的窗口
         public static final int TYPE_APPLICATION_STARTING = 3;
 
         /**
@@ -389,6 +413,9 @@ public interface WindowManager extends ViewManager {
          * windows are kept next to their attached window in Z-order, and their
          * coordinate space is relative to their attached window.
          */
+//        子窗口，顾名思义，它不能独立存在，需要附着在其他窗口才可以，PopupWindow就
+//        属于子窗口。子窗口的类型定义如下所示
+        // 子窗口类型初始值
         public static final int FIRST_SUB_WINDOW = 1000;
 
         /**
@@ -442,6 +469,8 @@ public interface WindowManager extends ViewManager {
          * Start of system-specific window types.  These are not normally
          * created by applications.
          */
+//        Toast、输入法窗口、系统音量条窗口、系统错误窗口都属于系统窗口。系统窗口的类
+//        型定义如下所示：
         public static final int FIRST_SYSTEM_WINDOW     = 2000;
 
         /**
@@ -783,6 +812,20 @@ public interface WindowManager extends ViewManager {
          */
         @Deprecated
         public int memoryType;
+
+//        FLAG_ALLOW_LOCK_WHILE_SCREEN_ON          只要窗口可见，就允许在开启状态的屏幕上锁屏
+//        FLAG NOT FOCUSABLE            只要窗口可见，就允许在开启状态的屏幕上锁屏
+//        FLAG NOT TOUCHABLE            窗口不能获得输入焦点，设置该标志的同时， FLAG NOT_TOUCH_MODAL 也会被设置
+//        FLAG NOT TOUCHABLE            窗口不接收任何触摸事件
+//        FLAG NOT TOUCH MODAL          将该窗口区域外的触摸事件传递给其他的Window，而自己只会处理窗口区域内的触摸事件
+//        FLAG KEEP SCREEN ON           只要窗口可见， 屏幕就会一直亮着
+//        FLAG LAYOUT NO LIMITS         允许窗口超过屏幕之外
+//        FLAG FULLSCREEN               隐藏所有的屏幕装饰窗口，比如在游戏、播放器中的全屏显示
+//        FLAG SHOW WHEN LOCKED         窗口可以在锁屏的窗口之上显示
+//        FLAG IGNORE CHEEK PRESSES     当用户的脸贴近屏幕时（ 比如打电话），不会去响应此事件
+//        FLAG TURN SCREEN ON           窗口显示时将屏幕点亮
+
+
 
         /** Window flag: as long as this window is visible to the user, allow
          *  the lock screen to activate while the screen is on.

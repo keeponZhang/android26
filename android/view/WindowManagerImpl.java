@@ -53,9 +53,9 @@ import java.util.List;
  * @hide
  */
 public final class WindowManagerImpl implements WindowManager {
-    private final WindowManagerGlobal mGlobal = WindowManagerGlobal.getInstance();
+    private final WindowManagerGlobal mGlobal = WindowManagerGlobal.getInstance();//1
     private final Context mContext;
-    private final Window mParentWindow;
+    private final Window mParentWindow;//2
 
     private IBinder mDefaultToken;
 
@@ -65,7 +65,7 @@ public final class WindowManagerImpl implements WindowManager {
 
     private WindowManagerImpl(Context context, Window parentWindow) {
         mContext = context;
-        mParentWindow = parentWindow;
+        mParentWindow = parentWindow;//3
     }
 
     public WindowManagerImpl createLocalWindowManager(Window parentWindow) {
@@ -86,10 +86,19 @@ public final class WindowManagerImpl implements WindowManager {
         mDefaultToken = token;
     }
 
+//    在注释l处调用了WindowManagerGlobal的addView方法，其中最后一个参数
+//    mParentWindow就是上面提到的Window，可以看出WindowManagerlmpl虽然是
+//    WindowManager的实现类，但是没有实现什么功能，而是将功能实现委托给了
+//    WindowManagerGlobal，这里用到的是桥接模式。关于WindowManagerGlobal的addView
+//    方怯会在7.4节中进行介绍。我们来查看在WindowManagerImpl中是如何定义
+//    WindowManagerGlobal的，
+
+//    addView方法的第一个参数的类型为View，说明窗口也是以View的形式存在的。
+//    addView方法中会调用WindowManagerGlobal 的addView方法，如下所示：
     @Override
     public void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
         applyDefaultToken(params);
-        mGlobal.addView(view, params, mContext.getDisplay(), mParentWindow);
+        mGlobal.addView(view, params, mContext.getDisplay(), mParentWindow);//1
     }
 
     @Override

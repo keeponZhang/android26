@@ -185,7 +185,12 @@ public class Session extends IWindowSession.Stub
         return addToDisplay(window, seq, attrs, viewVisibility, Display.DEFAULT_DISPLAY,
                 outContentInsets, outStableInsets, null /* outOutsets */, outInputChannel);
     }
-
+//    在addToDisplay方法中调用了WMS的addWindow方法，并将自身也就是Session作
+//    为参数传了进去，每个应用程序进程都会对应一个Session(正确来说是每个进程都有一个session代理),WMS会用ArrayList来保存这
+//    些Session，这就是为什么图7-4 中的WMS 包含Session的原因。这样剩下的工作就交给
+//    WMS来处理，在WMS中会为这个添加的窗口分配Surface，并确定窗口显示次序，可见
+//    负责显示界面的是画布Surface，而不是窗口本身。WMS 会将它所管理的Surface交由
+//    SurfaceFlinger处理，SurfaceFlinger会将这些Surface混合并绘制到屏幕上。
     @Override
     public int addToDisplay(IWindow window, int seq, WindowManager.LayoutParams attrs,
             int viewVisibility, int displayId, Rect outContentInsets, Rect outStableInsets,

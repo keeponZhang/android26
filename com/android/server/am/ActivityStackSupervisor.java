@@ -336,7 +336,10 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
 
     /** The current user */
     int mCurrentUser;
-
+//    mHomeStack用来存储LauncherApp的所有Activity,mFocusedStack表示当前正在接
+//    收输入或启动下一个Activity 的所有Activity。mLastFocusedStack表示此前接收输入的所有
+//    Activity。通过ActivityStackSupervisor 提供了获取上述ActivityStack的方法，比如要获取
+//    mFocusedStack，只需要调用ActivityStackSupervisor的getFocusedStack方法就可以了：
     /** The stack containing the launcher app. Assumed to always be attached to
      * Display.DEFAULT_DISPLAY. */
     ActivityStack mHomeStack;
@@ -1322,12 +1325,12 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
         return resolveActivity(intent, rInfo, startFlags, profilerInfo);
     }
 
-//    这里的app.thread 指的是IApplicationThread ,它的实现是ActivityThread 的内部类
-//    Application Thread ，其中ApplicationThread 继承了IApplicationThread.Stub。app 指的是传入
+//    这里的app.thread指的是IApplicationThread,它的实现是ActivityThread的内部类
+//    Application Thread，其中ApplicationThread 继承了IApplicationThread.Stub。app指的是传入
 //    的要启动的Activity 所在的应用程序进程，因此，这段代码指的就是要在目标应用程序进
-//    程启动Activity 。当前代码逻辑运行在AMS 所在的进程（ SystemServer 进程）中，通过
-//    Application Thread 来与应用程序进程进行Binder 通信，换句话说， ApplicationThread 是AMS
-//    所在进程（ SystemServer 进程）和应用程序进程的通信桥梁，如图4-3 所示。（1474）
+//    程启动Activity。当前代码逻辑运行在AMS所在的进程（SystemServer进程）中，通过
+//    ApplicationThread来与应用程序进程进行Binder通信，换句话说，ApplicationThread是AMS
+//    所在进程（SystemServer 进程）和应用程序进程的通信桥梁，如图4-3 所示。（1474）
     final boolean realStartActivityLocked(ActivityRecord r, ProcessRecord app,
             boolean andResume, boolean checkConfig) throws RemoteException {
 
@@ -3088,6 +3091,7 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
         return true;
     }
 
+    //注意注释1
     ActivityRecord findTaskLocked(ActivityRecord r, int displayId) {
         mTmpFindTaskResult.r = null;
         mTmpFindTaskResult.matchedByRootAffinity = false;
@@ -3107,7 +3111,7 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
                             "Skipping stack: (new task not allowed) " + stack);
                     continue;
                 }
-                stack.findTaskLocked(r, mTmpFindTaskResult);
+                stack.findTaskLocked(r, mTmpFindTaskResult);//1
                 // It is possible to have tasks in multiple stacks with the same root affinity, so
                 // we should keep looking after finding an affinity match to see if there is a
                 // better match in another stack. Also, task affinity isn't a good enough reason

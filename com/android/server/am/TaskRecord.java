@@ -123,8 +123,8 @@ import static java.lang.Integer.MAX_VALUE;
 //TaskRecord用来描述一个Activ句任务栈，其内部也有很多的成员变量，这里挑出一
 //些重要的成员变量进行介绍，如表6-2所示。
 //从表6 -2可以发现TaskRecord的作用，其内部存储了任务栈的所有信息，包括任务栈
-//的唯一标识符、任务校的倾向性、任务栈中的Activity记录和AMS的引用等，需要注意的
-//是其中含有ActivityStack，也就是当前Activity任务枝所归属的ActivityStack，我们接着来
+//的唯一标识符、任务栈的倾向性、任务栈中的Activity记录和AMS的引用等，需要注意的
+//是其中含有ActivityStack，也就是当前Activity任务栈所归属的ActivityStack，我们接着来
 //查看ActivityStack。
 final class TaskRecord extends ConfigurationContainer implements TaskWindowContainerListener {
     private static final String TAG = TAG_WITH_CLASS_NAME ? "TaskRecord" : TAG_AM;
