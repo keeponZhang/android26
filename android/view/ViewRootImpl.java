@@ -1357,13 +1357,16 @@ public final class ViewRootImpl implements ViewParent,
             mAttachInfo.mThreadedRenderer.notifyFramePending();
         }
     }
-
+//    注释l处的Choreographer译为“舞蹈指导”，用于接收显示系统的VSync信号，在下
+//    一个帧渲染时控制执行一些操作。Choreographer的postCallback 方法用于发起添加回调，
+//    这个添加的回调将在下一帧被渲染时执行。这个添加的回调用指的是注释l处的TraversalRunnable类型的mTraversalRunnable，
+//    如下所示：
     void scheduleTraversals() {
         if (!mTraversalScheduled) {
             mTraversalScheduled = true;
             mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();
             mChoreographer.postCallback(
-                    Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+                    Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);//1
             if (!mUnbufferedInputDispatch) {
                 scheduleConsumeBatchedInput();
             }
@@ -1380,7 +1383,8 @@ public final class ViewRootImpl implements ViewParent,
                     Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
         }
     }
-
+//    在doTraversal方法中又调用了performTraversals方法，performTraversals方法使得
+//    ViewTree开始View的工作流程，
     void doTraversal() {
         if (mTraversalScheduled) {
             mTraversalScheduled = false;
@@ -1580,6 +1584,18 @@ public final class ViewRootImpl implements ViewParent,
         return (int) (displayMetrics.density * dip + 0.5f);
     }
 
+    //relayoutWindow 1902
+    //performMeasure 2167
+    //performLayout 2215
+    //performDraw 2362
+//
+//    注释l处的relayoutWindow方法内部会调用IWindowSession的relayout方法来更新
+//    Window视图，这一过程和7.4.1节中图7-4的原理是一样的，最终会i周用WMS的
+//    relayoutWindow方法。除此之外，performTraversals方法还会在注释2, 3,4处分别调用
+//    performMeasure、perforrnLayout和performDraw方法，它们的内部又会调用View 的measure、
+//    layout和draw方法，这样就完成了View的工作流程。在performTraversals方法中更新了
+//    Window视图，又执行Window中的View的工作流程，这样就完成了Window的更新，至
+//    于Window的删除过程将在第8章进行讲解。
     private void performTraversals() {
         // cache mView since it is used so much below...
         final View host = mView;
@@ -1895,7 +1911,7 @@ public final class ViewRootImpl implements ViewParent,
                     }
                     mChoreographer.mFrameInfo.addFlags(FrameInfo.FLAG_WINDOW_LAYOUT_CHANGED);
                 }
-                relayoutResult = relayoutWindow(params, viewVisibility, insetsPending);
+                relayoutResult = relayoutWindow(params, viewVisibility, insetsPending);//1
 
                 if (DEBUG_LAYOUT) Log.v(mTag, "relayout: frame=" + frame.toShortString()
                         + " overscan=" + mPendingOverscanInsets.toShortString()
@@ -2159,7 +2175,7 @@ public final class ViewRootImpl implements ViewParent,
                             + " coveredInsetsChanged=" + contentInsetsChanged);
 
                      // Ask host how big it wants to be
-                    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);
+                    performMeasure(childWidthMeasureSpec, childHeightMeasureSpec);//2
 
                     // Implementation of weights from WindowManager.LayoutParams
                     // We just grow the dimensions as needed and re-measure if
@@ -3462,7 +3478,8 @@ public final class ViewRootImpl implements ViewParent,
             }
         }
     }
-
+//    在dispatchDetachedFromWindow方法中主要调用了IWindowSession的remove方法，
+//    IWindowSession在Server端的实现为Session，
     void dispatchDetachedFromWindow() {
         if (mView != null && mView.mAttachInfo != null) {
             mAttachInfo.mTreeObserver.dispatchOnWindowAttachedChange(false);
@@ -3497,6 +3514,7 @@ public final class ViewRootImpl implements ViewParent,
             mInputEventReceiver = null;
         }
         try {
+            //mWindow的类对象是ViewRootImpl的内部类W
             mWindowSession.remove(mWindow);
         } catch (RemoteException e) {
         }
@@ -6287,11 +6305,17 @@ public final class ViewRootImpl implements ViewParent,
      * @param immediate True, do now if not in traversal. False, put on queue and do later.
      * @return True, request has been queued. False, request has been completed.
      */
+    //die方法需要立即执行并且此时ViewRootimpl不再执行performTraversals方法
+//    在注释l处如果immediate为true（需要立即执行)，mIsInTraversal值为false则
+//    执行注释2处的代码，mIsInTraversal 在执行ViewRootlmpl的performTraversals方法时会被
+//    设置为true，在performTraversals方法执行完时被设置为false，因此注释1处可以理解为
+//    die方法需要立即执行并且此时ViewRootlmpl不再执行perfirmTraversals方法。在注释2
+//    处的doDie方法如下所示：
     boolean die(boolean immediate) {
         // Make sure we do execute immediately if we are in the middle of a traversal or the damage
         // done by dispatchDetachedFromWindow will cause havoc on return.
-        if (immediate && !mIsInTraversal) {
-            doDie();
+        if (immediate && !mIsInTraversal) {//1
+            doDie();//2
             return false;
         }
 
@@ -6304,20 +6328,26 @@ public final class ViewRootImpl implements ViewParent,
         mHandler.sendEmptyMessage(MSG_DIE);
         return true;
     }
-
+//    在注释l处用于检查执行doDie方法的线程的正确性，在注释l处的内部会判断执行
+//    doDie方法线程是否是创建V的原始线程，如果不是就会抛出异常，这是因为只有创建V
+//    的原始线程才能够操作V。注释2到注释3处的代码用于防止doDie方法被重复调用。在
+//    注释4处V有子View就会调用注释5处的dispatchDetachedFromWindow方法来销毁View。
+//    在注释6处如果V有子View并且不是第一次被添加，就会执行后面的代码逻辑。注释7
+//    处的WindowManagerGlobal的doRemoveView方法，如下所示：
     void doDie() {
+        //检查执行do Die 方法的线程的正确性
         checkThread();
         if (LOCAL_LOGV) Log.v(mTag, "DIE in " + this + " of " + mSurface);
         synchronized (this) {
-            if (mRemoved) {
+            if (mRemoved) {//2
                 return;
             }
-            mRemoved = true;
-            if (mAdded) {
-                dispatchDetachedFromWindow();
+            mRemoved = true;//3
+            if (mAdded) {//4
+                dispatchDetachedFromWindow();//5
             }
 
-            if (mAdded && !mFirst) {
+            if (mAdded && !mFirst) {//6
                 destroyHardwareRenderer();
 
                 if (mView != null) {
@@ -6342,7 +6372,7 @@ public final class ViewRootImpl implements ViewParent,
 
             mAdded = false;
         }
-        WindowManagerGlobal.getInstance().doRemoveView(this);
+        WindowManagerGlobal.getInstance().doRemoveView(this);//7
     }
 
     public void requestUpdateConfiguration(Configuration config) {

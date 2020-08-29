@@ -409,7 +409,7 @@ public final class SystemServer {
             startBootstrapServices();//3
             //启动核心服务
             startCoreServices();//4
-            //启动其他服务
+            //启动其他服务（包括了WMS）
             startOtherServices();//5
             SystemServerInitThreadPool.shutdown();
         } catch (Throwable ex) {
@@ -687,6 +687,23 @@ public final class SystemServer {
      * Starts a miscellaneous grab bag of stuff that has yet to be refactored
      * and organized.
      */
+    //5在855
+    //7在931
+    //8在1591
+//    startOtherServices方法用于启动其他服务，其他服务大概有100个左右，上面的代码只
+//    列出了WMS以及和它相关的IMS的启动逻辑，剩余的其他服务的启动逻辑也都大同小异。
+//    在注释l、注释2处分别得到Watchdog实例并对它进行初始化，Watchdog用来监控系统的
+//    一些关键服务的运行状况，后文会再次提到它。在注释3处创建了IMS，并赋值给IMS类
+//    型的inputManager对象。在注释4处执行了WMS 的main方怯，其内部会创建WMS，需
+//    要注意的是main方法其中一个传人的参数就是在注释l处创建的IMS,WMS是输入事件
+//    的中转站，其内部包含了IMS引用并不意外。结合上文，我们可以得知WMS的main方法
+//    是运行在SystemServer的run方法中的，换句话说就是运行在“ system_server” 线程中，
+//    后面会再次提到“system_server” 线程。在注释5 和注释6处分别将WMS和IMS注册到
+//    ServiceManager中，这样如果某个客户端想要使用WMS，就需要先去ServiceManager中查
+//    询信息，然后根据信息与WMS所在的进程建立通信通路，客户端就可以使用WMS了。
+//    在注释7处用来初始化屏幕显示信息，在注释8处则用来通知WMS，系统的初始化工作已
+//    经完成，其内部调用了WindowManagerPolicy的systemReady方法。我们来查看注释4处
+//    WMS的main方法，如下所示：
     private void startOtherServices() {
         final Context context = mSystemContext;
         VibratorService vibrator = null;
@@ -824,12 +841,12 @@ public final class SystemServer {
             traceEnd();
 
             traceBeginAndSlog("InitWatchdog");
-            final Watchdog watchdog = Watchdog.getInstance();
-            watchdog.init(context, mActivityManagerService);
+            final Watchdog watchdog = Watchdog.getInstance();//1
+            watchdog.init(context, mActivityManagerService);//2
             traceEnd();
 
             traceBeginAndSlog("StartInputManagerService");
-            inputManager = new InputManagerService(context);
+            inputManager = new InputManagerService(context);//3
             traceEnd();
 
             traceBeginAndSlog("StartWindowManagerService");
@@ -838,9 +855,9 @@ public final class SystemServer {
             mSensorServiceStart = null;
             wm = WindowManagerService.main(context, inputManager,
                     mFactoryTestMode != FactoryTest.FACTORY_TEST_LOW_LEVEL,
-                    !mFirstBoot, mOnlyCore, new PhoneWindowManager());
-            ServiceManager.addService(Context.WINDOW_SERVICE, wm);
-            ServiceManager.addService(Context.INPUT_SERVICE, inputManager);
+                    !mFirstBoot, mOnlyCore, new PhoneWindowManager());//4
+            ServiceManager.addService(Context.WINDOW_SERVICE, wm);//5
+            ServiceManager.addService(Context.INPUT_SERVICE, inputManager);//6
             traceEnd();
 
             // Start receiving calls from HIDL services. Start in in a separate thread
@@ -927,7 +944,7 @@ public final class SystemServer {
 
         traceBeginAndSlog("MakeDisplayReady");
         try {
-            wm.displayReady();
+            wm.displayReady();//7
         } catch (Throwable e) {
             reportWtf("making display ready", e);
         }
@@ -1588,7 +1605,7 @@ public final class SystemServer {
 
         traceBeginAndSlog("MakeWindowManagerServiceReady");
         try {
-            wm.systemReady();
+            wm.systemReady();//8
         } catch (Throwable e) {
             reportWtf("making Window Manager Service ready", e);
         }

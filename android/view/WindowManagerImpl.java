@@ -100,7 +100,7 @@ public final class WindowManagerImpl implements WindowManager {
         applyDefaultToken(params);
         mGlobal.addView(view, params, mContext.getDisplay(), mParentWindow);//1
     }
-
+//    WindowManagerImpI的updateViewLayout方法会调用WindowManagerGlobal的updateViewLayout
     @Override
     public void updateViewLayout(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
         applyDefaultToken(params);

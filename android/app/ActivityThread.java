@@ -3722,7 +3722,11 @@ public final class ActivityThread {
         r.mPendingRemoveWindow = null;
         r.mPendingRemoveWindowManager = null;
     }
-
+//    注释l处的performResumeActivity方法最终会调用Activity的onResume方法。在注
+//    释2处得到ViewManager类型的wm对象，在注释3处调用了ViewManager的addView方
+//    怯，而addView方法则是在WindowManagerlmpl中实现的，此后的过程在上面的系统窗口
+//    StatusBar的添加过程中已经讲过，唯一需要注意的是ViewManager的addView方法的第一
+//    个参数为DecorView，这说明Acitivty窗口中会包含DecorView
     final void handleResumeActivity(IBinder token,
             boolean clearHide, boolean isForward, boolean reallyResume, int seq, String reason) {
         ActivityClientRecord r = mActivities.get(token);
@@ -3736,7 +3740,7 @@ public final class ActivityThread {
         mSomeActivitiesChanged = true;
 
         // TODO Push resumeArgs into the activity for consideration
-        r = performResumeActivity(token, clearHide, reason);
+        r = performResumeActivity(token, clearHide, reason);//1
 
         if (r != null) {
             final Activity a = r.activity;
@@ -3765,7 +3769,7 @@ public final class ActivityThread {
                 r.window = r.activity.getWindow();
                 View decor = r.window.getDecorView();
                 decor.setVisibility(View.INVISIBLE);
-                ViewManager wm = a.getWindowManager();
+                ViewManager wm = a.getWindowManager();//2
                 WindowManager.LayoutParams l = r.window.getAttributes();
                 a.mDecor = decor;
                 l.type = WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
@@ -3785,7 +3789,7 @@ public final class ActivityThread {
                 if (a.mVisibleFromClient) {
                     if (!a.mWindowAdded) {
                         a.mWindowAdded = true;
-                        wm.addView(decor, l);
+                        wm.addView(decor, l);//3
                     } else {
                         // The activity will get a callback for this {@link LayoutParams} change
                         // earlier. However, at that time the decor will not be set (this is set

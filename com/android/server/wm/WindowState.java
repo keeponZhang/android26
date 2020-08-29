@@ -1709,19 +1709,39 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
 
         super.forceWindowsScaleableInTransaction(force);
     }
+//    removelfPossible方法和它的名字一样，并不是直接执行删除操作的，而是进行多个条
+//    件判断过滤，满足其中一个条件就会return，推迟删除操作。比如V正在运行－个动画，
+//    这时就得推迟删除操作，直到动画完成。通过这些条件判断过滤就会执行注释l处的
+//    removelmmediately方法：
 
+
+//    removelmmediately方法如同它的名字一样，用于立即进行删除操作。在注释l处的
+//    mRemoved 为true意味着正在执行删除Window操作，在注释l到注释2处之间的代码用
+//    于防止重复删除操作。在注释3处如果当前要删除的Window是StatusBar或者NavigationBar
+//    就会将这个Window从对应的控制器中删除。在注释4处将V对应的Session从WMS的
+//    ArraySet<Session>mSessions中删除井清除Session对应的SurfaceSession资源
+//    (SurfaceSession是SurfaceFlinger的一个连接，通过这个连接可以创建l个或者多个Surface
+//    并渲染到屏幕上）。在注释5处调用了WMS的postWindowRemoveCleanupLocked方法用于
+//    对V进行一些集中的清理工作，这里就不再继续深挖下去，有兴趣的读者可以自行查看
+//    源码。
+
+//    Window 的删除过程就讲到这里，虽然删除的操作逻辑比较复杂，但是可以简单地总结为以下4 点：
+//      1·检查删除线程的正确性，如果不正确就抛出异常。
+//      2·从ViewRootlmpl列表、布局参数列表和View 列表中删除与V对应的元素。
+//      3．判断是否可以直接执行删除操作，如果不能就推迟删除操作。
+//      4·执行删除操作，清理和释放与V相关的一切资源。
     @Override
     void removeImmediately() {
         super.removeImmediately();
 
-        if (mRemoved) {
+        if (mRemoved) {//1
             // Nothing to do.
             if (DEBUG_ADD_REMOVE) Slog.v(TAG_WM,
                     "WS.removeImmediately: " + this + " Already removed...");
             return;
         }
 
-        mRemoved = true;
+        mRemoved = true;//2
 
         mWillReplaceWindow = false;
         if (mReplacementWindow != null) {
@@ -1737,13 +1757,13 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
         if (WindowManagerService.excludeWindowTypeFromTapOutTask(type)) {
             dc.mTapExcludedWindows.remove(this);
         }
-        mPolicy.removeWindowLw(this);
+        mPolicy.removeWindowLw(this);//3
 
         disposeInputChannel();
 
         mWinAnimator.destroyDeferredSurfaceLocked();
         mWinAnimator.destroySurfaceLocked();
-        mSession.windowRemovedLocked();
+        mSession.windowRemovedLocked();//4
         try {
             mClient.asBinder().unlinkToDeath(mDeathRecipient, 0);
         } catch (RuntimeException e) {
@@ -1751,7 +1771,7 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
             // we are doing this as part of processing a death note.)
         }
 
-        mService.postWindowRemoveCleanupLocked(this);
+        mService.postWindowRemoveCleanupLocked(this);//5
     }
 
     @Override
@@ -1885,8 +1905,8 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
                 return;
             }
         }
-
-        removeImmediately();
+//        条件判断过滤，满足其中一个条件就会return，推迟删除操作
+        removeImmediately();//1
         // Removing a visible window will effect the computed orientation
         // So just update orientation if needed.
         if (wasVisible && mService.updateOrientationFromAppTokensLocked(false, displayId)) {

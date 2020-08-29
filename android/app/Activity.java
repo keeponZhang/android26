@@ -6963,7 +6963,7 @@ public class Activity extends ContextThemeWrapper
         if (mParent != null) {
             mWindow.setContainer(mParent.getWindow());
         }
-        mWindowManager = mWindow.getWindowManager();
+        mWindowManager = mWindow.getWindowManager();//5
         mCurrentConfig = config;
 
         mWindow.setColorMode(info.colorMode);

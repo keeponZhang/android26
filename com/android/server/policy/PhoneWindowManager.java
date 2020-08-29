@@ -1823,6 +1823,26 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private boolean isRoundWindow() {
         return mContext.getResources().getConfiguration().isScreenRound();
     }
+//    initPolicy方法和此前讲的WMS的main 法的实现类似，在注释l处执行了WMP的
+//    init方法，WMP是一个接口，init方法具体在PhoneWindowManager(PWM ）中实现。PWM
+//     的init方法运行在android.ui线程中，它的优先级要高于initPolicy方法所在的android.display
+//     线程，因此android.display线程要等PWM的init方法执行完毕后，处于等待状态的
+//     android.display线程才会被唤醒从而继续执行下面的代码。本文共提到了3 个线程，分别是
+//     system_server、android.display和android.ui
+//     如图8 -2 所示。
+
+//    从图8-2可以看出，三个线程之间的关系分为三个步骤来实现：
+//    1首先在system_server线程中执行了SystemServer的startOtherServices方法，在
+//    startOtherServices方法中会调用WMS的main方法，main方法会创建WMS，创建的过程
+//    在android.display线程中实现，创建WMS 的优先级更高，因此system_server线程要等WMS
+//    创建完成后，处于等待状态的system_server线程才会被唤醒从而继续执行下面的代码。
+//    2在WMS的构造方法中会调用WMS的initPolicy方法，在_initPolicy方法中又会调
+//    用PWM 的init方法，PWM的init方法在android.ui线程中运行，它的优先级要高于
+//    android.display线程，因此“android.display”线程要等PWM的init方法执行完毕后，处于
+//    等待状态的android.display线程才会被唤醒从而继续执行下面的代码。
+//    3PWM的init 方法执行完毕后， android.display线程就完成了WMS的创建，等待
+//    的system_server线程被唤醒后继续执行WMS的main方法后的代码逻辑，比如WMS的
+//    displayReady方法用来初始化屏幕显示信息(SystemServer 的startOtherServices方法的注释7 处）。
 
     /** {@inheritDoc} */
     @Override

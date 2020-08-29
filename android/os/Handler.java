@@ -488,6 +488,12 @@ public class Handler {
      * If we ever do make it part of the API, we might want to rename it to something
      * less funny like runUnsafe().
      */
+//    开头对传入的Runnable 和timeout进行了判断，如果Runnable为null或者timeout小
+//    于0则抛出异常。在注释l处根据每个线程只有一个Looper(使用了ThreadLocal)的原理来判断当前的线程
+//    (system_server线程）是否是Handler所指向的线程（android.display线程），如果是则直接
+//    执行Runnable的run方法，如果不是则调用BlockingRunnable的postAndWait方法，并将
+//    当前线程的Runnable作为参数传进去，BlockingRunnable是Handler的内部类，代码如下
+//    所示：
     public final boolean runWithScissors(final Runnable r, long timeout) {
         if (r == null) {
             throw new IllegalArgumentException("runnable must not be null");
@@ -496,7 +502,7 @@ public class Handler {
             throw new IllegalArgumentException("timeout must be non-negative");
         }
 
-        if (Looper.myLooper() == mLooper) {
+        if (Looper.myLooper() == mLooper) {//1
             r.run();
             return true;
         }
@@ -809,14 +815,24 @@ public class Handler {
                 mTask.run();
             } finally {
                 synchronized (this) {
+                    //这里要注意，把mDone设置为true了
                     mDone = true;
                     notifyAll();
                 }
             }
         }
-
+//        在注释2处将当前的BlockingRunnable添加到Handler的任务队列中。前面
+//        runWithScissors方法的第二个参数为0，因此timeout等于0，这样如果mDone为false的
+//        话会一直调用注释3处的wait方法使得当前线程（system_server线程）进入等待状态，
+//        那么等待的是哪个线程呢？我们往上看，在在释l处执行了传入的Runnable的run方法
+//        （运行在android.display线程，执行完毕后在finally代码块中将mDone设置为true，并
+//        调用notifyAll方法唤醒处于等待状态的线程，这样就不会继续调用注释3处的wait方法。
+//        因此得出结论， system_serve线程等待的就是android.display线程，一直到android.display
+//        线程执行完毕再执行system_server线程，这是因为android.display线程内部执行了WMS
+//        的创建，而WMS的创建优先级要更高。WMS的创建就讲到这里，最后查看WMS的构
+//        造方法：
         public boolean postAndWait(Handler handler, long timeout) {
-            if (!handler.post(this)) {
+            if (!handler.post(this)) {//2
                 return false;
             }
 
@@ -836,7 +852,7 @@ public class Handler {
                 } else {
                     while (!mDone) {
                         try {
-                            wait();
+                            wait();//3
                         } catch (InterruptedException ex) {
                         }
                     }

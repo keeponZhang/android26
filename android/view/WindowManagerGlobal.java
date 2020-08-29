@@ -379,7 +379,11 @@ public final class WindowManagerGlobal {
             }
         }
     }
-
+//    注释l处将更新的参数设置到View中。注释2处得到要更新的窗口在View列表中的
+//    索引，注释3处在ViewRootlmpl列表中根据索引得到窗口的ViewRootlmpl，注释4和注释
+//    5处用于更新布局参数列表，注释6 处i周用ViewRootlmpl 的setLayoutParams方法将更新的
+//    参数设置到ViewRootlmpl中。ViewRootlmpl的setLayoutParams方法在最后会调用
+//    ViewRootlmpl的scheduleTraversals方法，如下所示：
     public void updateViewLayout(View view, ViewGroup.LayoutParams params) {
         if (view == null) {
             throw new IllegalArgumentException("view must not be null");
@@ -390,26 +394,27 @@ public final class WindowManagerGlobal {
 
         final WindowManager.LayoutParams wparams = (WindowManager.LayoutParams)params;
 
-        view.setLayoutParams(wparams);
+        view.setLayoutParams(wparams);//1
 
         synchronized (mLock) {
-            int index = findViewLocked(view, true);
-            ViewRootImpl root = mRoots.get(index);
-            mParams.remove(index);
-            mParams.add(index, wparams);
-            root.setLayoutParams(wparams, false);
+            int index = findViewLocked(view, true);//2
+            ViewRootImpl root = mRoots.get(index);//3
+            mParams.remove(index);//4
+            mParams.add(index, wparams);//5
+            root.setLayoutParams(wparams, false);//6
         }
     }
-
+    在注释l处找到要V在View,列表中的索引，在注释2处调用了removeViewLocked方
+    法并将这个索引传进去，如下所示：
     public void removeView(View view, boolean immediate) {
         if (view == null) {
             throw new IllegalArgumentException("view must not be null");
         }
 
         synchronized (mLock) {
-            int index = findViewLocked(view, true);
+            int index = findViewLocked(view, true);//1
             View curView = mRoots.get(index).getView();
-            removeViewLocked(index, immediate);
+            removeViewLocked(index, immediate);//2
             if (curView == view) {
                 return;
             }
@@ -460,18 +465,21 @@ public final class WindowManagerGlobal {
             }
         }
     }
-
+//    在注释l处根据传入的索引在ViewRootlmpl列表中获得V的ViewRootlmpl。在注释2
+//    处得到InputMethodManager实例，如果InputMethodManager实例不为null!则在注释3处调
+//    用InputMethodManager的windowDismissed方法来结束V的输入怯相关的逻辑。在注释4
+//    处调用ViewRootlmpl的die方法，如下所示：
     private void removeViewLocked(int index, boolean immediate) {
-        ViewRootImpl root = mRoots.get(index);
+        ViewRootImpl root = mRoots.get(index);//1
         View view = root.getView();
 
         if (view != null) {
-            InputMethodManager imm = InputMethodManager.getInstance();
+            InputMethodManager imm = InputMethodManager.getInstance();//2
             if (imm != null) {
-                imm.windowDismissed(mViews.get(index).getWindowToken());
+                imm.windowDismissed(mViews.get(index).getWindowToken());//3
             }
         }
-        boolean deferred = root.die(immediate);
+        boolean deferred = root.die(immediate);//4
         if (view != null) {
             view.assignParent(null);
             if (deferred) {
@@ -479,10 +487,14 @@ public final class WindowManagerGlobal {
             }
         }
     }
-
+//    在7.4.1节我们知道了在WindowManagerGlobal中维护了和Window操作相关的三个列
+//    表， doRemoveView方法会从这三个列表中清除V对应的元素。在注释l处找到V对应的
+//    ViewRootimpl ViewRootimpl列表中的索引，接着根据这个索引从ViewRootlmpl 列表、
+//    布局参数列表和View 列表中删除与V对应的元素。我们接着回到ViewRootlmpl的doDie
+//    方法，查看注释5处的dispatchDetachedFromWindow方法做了什么：
     void doRemoveView(ViewRootImpl root) {
         synchronized (mLock) {
-            final int index = mRoots.indexOf(root);
+            final int index = mRoots.indexOf(root);//1
             if (index >= 0) {
                 mRoots.remove(index);
                 mParams.remove(index);
